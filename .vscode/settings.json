@@ -1,0 +1,21 @@
+{
+    "java.jdt.ls.java.home": "/Users/tarikuygul/.sdkman/candidates/java/25.0.1-tem",
+    "[java]": {
+        "editor.defaultFormatter": "redhat.java",
+        "editor.formatOnSave": true
+    },
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx-swt.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.base.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.controls.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.fxml.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.graphics.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.media.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.swing.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/javafx.web.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/jdk.jsobject.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/jfx.incubator.input.jar",
+        "/Users/tarikuygul/Downloads/javafx-sdk-25.0.1/lib/jfx.incubator.richtext.jar"
+    ]
+}

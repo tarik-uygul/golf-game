@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "LogLogPlot",
+            "request": "launch",
+            "mainClass": "LogLogPlot",
+            "projectName": "team_02_ecd46f8d"
+        },
+        {
+            "type": "java",
+            "name": "Visualizer",
+            "request": "launch",
+            "mainClass": "Visualizer",
+            "projectName": "team_02_ecd46f8d"
+        },
+        {
+            "name": "Visualizer (Shell)",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "/bin/bash",
+            "runtimeArgs": [
+                "${workspaceFolder}/run_visualizer.sh"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        }
+    ]
+}

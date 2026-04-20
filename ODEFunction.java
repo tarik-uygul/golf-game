@@ -1,4 +1,3 @@
-
 // so this is basically just a "blueprint" for what a physics function should look like
 // to call SOMETHING to get the derivatives, but they dont know what system we are simulating
 // so instead of hardcoding the physics into the solver we just say

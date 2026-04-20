@@ -1,5 +1,4 @@
 
-
 // euler was simple but it only looks at the derivative at the START of the step
 // which is a problem because the derivative is changing the whole time during the step
 

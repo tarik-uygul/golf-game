@@ -1,4 +1,3 @@
-
 // euler method - simple version of solving differential equations
 // in simple words: if you know where something is, and you know which direction its going,
 // just. move it a little bit in that direction.

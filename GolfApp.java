@@ -18,7 +18,7 @@ public class GolfApp extends Application {
         try {
             CourseInputProcessing processor = new CourseInputProcessing();
         CourseConfiguration configuration = processor.buildConfig(
-                "1.0",        // ← no sin/cos, guaranteed to parse
+                "1.0",        // temporarily used these functions since the expression parses cannot handle sin/cos yet
                 "0.08", "0.2",
                 "7.0", "8.0",
                 "14.0", "1.0",

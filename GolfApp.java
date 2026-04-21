@@ -10,15 +10,15 @@ public class GolfApp extends Application {
     // change according to assignment
     private static final double DT = 0.01; // time step in seconds
     private static final double MAX_TIME = 60.0; // max simulation time per shot
-    private static final double interfaceWidth = 1000;
-    private static final double interfaceHeight = 600;
+    private static final double INTERFACE_WIDTH = 1000;
+    private static final double INTERFACE_HEIGHT = 750;
 
     @Override
     public void start(Stage stage) {
         try {
             CourseInputProcessing processor = new CourseInputProcessing();
         CourseConfiguration configuration = processor.buildConfig(
-                "1.0",        // temporarily used these functions since the expression parses cannot handle sin/cos yet
+                "1.0", // temporarily used these functions since the expression parses cannot handle sin/cos yet
                 "0.08", "0.2",
                 "7.0", "8.0",
                 "14.0", "1.0",
@@ -33,15 +33,15 @@ public class GolfApp extends Application {
         CourseProfile course = new CourseConfigurationProfile(configuration);
 
         // the course renderer handles all drawings on the canvas
-        CourseRenderer renderer = new CourseRenderer(course, interfaceWidth, interfaceHeight);
+        CourseRenderer renderer = new CourseRenderer(course, INTERFACE_WIDTH, INTERFACE_HEIGHT);
         Canvas canvas = renderer.getCanvas();
-        canvas.setWidth(interfaceWidth);
-        canvas.setHeight(interfaceHeight);
+        canvas.setWidth(INTERFACE_WIDTH);
+        canvas.setHeight(INTERFACE_HEIGHT);
 
         // StackPane locks the canvas to a size so it doesn't shift/move
         StackPane canvasHolder = new StackPane(canvas);
-        canvasHolder.setMinSize(interfaceWidth, interfaceHeight);
-        canvasHolder.setMaxSize(interfaceWidth, interfaceHeight);
+        canvasHolder.setMinSize(INTERFACE_WIDTH, INTERFACE_HEIGHT);
+        canvasHolder.setMaxSize(INTERFACE_WIDTH, INTERFACE_HEIGHT);
         ControlPanel controls = new ControlPanel(course);
         // controller wires the buttons to the simulator and renderer, nothing works without this
         SimulationController ctrl = new SimulationController(
@@ -53,7 +53,7 @@ public class GolfApp extends Application {
         HBox root = new HBox();
         root.getChildren().addAll(controls.getPanel(), canvasHolder);
 
-        stage.setScene(new Scene(root, interfaceWidth, interfaceHeight + 60));
+        stage.setScene(new Scene(root, INTERFACE_WIDTH, INTERFACE_HEIGHT + 60));
         stage.setTitle("Putting game");
         stage.setResizable(false);
         stage.sizeToScene();

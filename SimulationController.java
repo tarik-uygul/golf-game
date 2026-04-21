@@ -5,7 +5,7 @@ public class SimulationController {
     private int shotCount = 0;
     private double[] currentPosition;
     private double[] positionBeforeShot;
-    private final CourseProfile course;
+    private CourseProfile course;
     private final CourseRenderer renderer;
     private final ControlPanel controls;
     private final double dt;
@@ -91,9 +91,38 @@ public class SimulationController {
     }
 
     private void handleReset() {
-        // this takes input from the gui (where the overriding takes place)
+        // this takes input from the gui (overrides the default values)
         double[] guiStart = controls.getStartPosition();
+        double[] guiTarget = controls.getTargetPosition();
+        double[] guiFriction = controls.getFriction();
+
         currentPosition = (guiStart != null) ? guiStart : course.getStartPosition().clone();
+
+        //rebuild the course with the new target position and friction if valid
+        if (guiTarget != null && guiFriction != null) {
+            try {
+                CourseInputProcessing processor = new CourseInputProcessing();
+                CourseConfiguration config = processor.buildConfig(
+                    // keep existing height expression so the shape of terrains stays the same
+                    ((CourseConfigurationProfile) course).getHeightExpression(),
+                    String.valueOf(guiFriction[0]),
+                    String.valueOf(guiFriction[1]),
+                    String.valueOf(currentPosition[0]),
+                    String.valueOf(currentPosition[1]),
+                    String.valueOf(guiTarget[0]),
+                    String.valueOf(guiTarget[1]),
+                    String.valueOf(course.getTargetRadius()),
+                    "0.01"
+                );
+                
+                //update the course reference
+                course = new CourseConfigurationProfile(config);
+            } catch (IllegalArgumentException e) {
+                controls.setStatus(e.getMessage(), Color.RED);
+                return;
+            }
+        }
+
         positionBeforeShot = currentPosition.clone();
         shotCount = 0;
         controls.updateShotCount(0);

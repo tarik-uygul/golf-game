@@ -18,6 +18,11 @@ public class ControlPanel {
     private TextField startXField;
     private TextField startYField;
     private Button botButton;
+    private final TextField powerField;
+    private TextField targetXField;
+    private TextField targetYField;
+    private TextField muKField;
+    private TextField muSField;
 
     public ControlPanel(CourseProfile course) {
         vxField = new TextField("0.0");
@@ -66,8 +71,27 @@ public class ControlPanel {
         positionLabel.setWrapText(true);
         positionLabel.setMaxWidth(150);
 
+        // initialize the textfield for the power of the shot
+        powerField = new TextField("1.0");
+        powerField.setPrefWidth(150);
+        powerField.setMinWidth(150);
+        powerField.setMaxWidth(150);
+
+        // initialize the textfields for the position of the target
+        targetXField = new TextField("14.0");
+        targetYField = new TextField("1.0");
+        targetXField.setMaxWidth(150);
+        targetYField.setMaxWidth(150);
+
+        // initialize the textfields for the friction
+        muKField = new TextField("0.08");
+        muSField = new TextField("0.2");
+        muKField.setMaxWidth(150);
+        muSField.setMaxWidth(150);
+
         // show labels and textfields
         panel = new VBox(10,
+            new Label("Power (0-5):"), powerField,
             new Label("vx:"), vxField,
             new Label("vy:"), vyField,
             new Label("Solver:"), solverPicker,
@@ -79,6 +103,14 @@ public class ControlPanel {
             new Label("Start Position:"),
             new HBox(5, new Label("x"), startXField),
             new HBox(5, new Label("y"), startYField),
+            new Separator(),
+            new Label("Target Position:"),
+            new HBox(5, new Label("x"), targetXField),
+            new HBox(5, new Label("y"), targetYField),
+            new Separator(),
+            new Label("Friction:"),
+            new HBox(5, new Label("µK"), muKField),
+            new HBox(5, new Label("µS"), muSField),
             new Separator(),
             shotCountLabel,
             statusLabel,
@@ -96,11 +128,15 @@ public class ControlPanel {
             try {
                 double vx = Double.parseDouble(vxField.getText());
                 double vy = Double.parseDouble(vyField.getText());
-                double speed = Math.sqrt(vx*vx + vy*vy);
-                double maxSpeed = 5.0;
-                if (speed > maxSpeed) {
-                    vx = vx / speed * maxSpeed;
-                    vy = vy / speed * maxSpeed;
+                double power = Double.parseDouble(powerField.getText());
+                
+                // ensures that the power is between 0 and 5
+                power = Math.max(0, Math.min(5.0, power));
+
+                double speed = Math.max(0, Math.sqrt(vx*vy + vy*vy));
+                if (speed > 1e-6) { // cant divide by zero
+                    vx = (vx / speed) * power;
+                    vy = (vy / speed) * power;
                 }
                 handler.accept(new double[]{vx, vy});
             } catch (NumberFormatException ex) {
@@ -149,5 +185,27 @@ public class ControlPanel {
     public void setShootEnabled(boolean enabled) {
         shootButton.setDisable(!enabled);
         botButton.setDisable(!enabled);
+    }
+
+    public double[] getTargetPosition() {
+        try {
+            return new double[]{
+                Double.parseDouble(targetXField.getText()),
+                Double.parseDouble(targetYField.getText())
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public double[] getFriction() {
+        try {
+            return new double[]{
+                Double.parseDouble(muKField.getText()),
+                Double.parseDouble(muSField.getText())
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

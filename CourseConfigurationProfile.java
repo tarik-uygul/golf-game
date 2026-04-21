@@ -7,6 +7,10 @@ public class CourseConfigurationProfile implements CourseProfile {
         this.config = config;
     }
 
+    public String getHeightExpression() {
+        return config.heightFunction.getExpression();
+    }
+
     @Override public double getHeight(double x, double y)  { return config.heightFunction.evaluate(x, y); }
     @Override public double getSlopeX(double x, double y)  { return config.heightFunction.dhdx(x, y); }
     @Override public double getSlopeY(double x, double y)  { return config.heightFunction.dhdy(x, y); }

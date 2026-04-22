@@ -35,9 +35,14 @@ public class GolfSimulator {
             path.add(state.clone());
             time += dt;
 
-            // check water (negative height)
+            // check if the ball goed in the water (negative height)
             if (course.getHeight(state[0], state[1]) < 0) {
                 return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
+            }
+
+            // check if the ball goes out of bounds/leaves the course
+            if (isOutOfBounds(state)) {
+                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
             }
 
             // check target reached
@@ -76,5 +81,10 @@ public class GolfSimulator {
         double dhdy = course.getSlopeY(state[0], state[1]);
         double slopeNorm = Math.sqrt(dhdx*dhdx + dhdy*dhdy);
         return slopeNorm <= course.getStaticFriction();
+    }
+
+    private boolean isOutOfBounds(double[] state) {
+        return state[0] < 0 || state[0] > course.getCourseWidth() || 
+               state[1] < 0 || state[1] > course.getCourseHeight();
     }
 }

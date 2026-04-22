@@ -2,15 +2,11 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import java.util.function.Consumer;
 
 public class ControlPanel {
 
     private final VBox panel;
-    private final TextField vxField;
-    private final TextField vyField;
     private final ComboBox<String> solverPicker;
-    private final Button shootButton;
     private final Button resetButton;
     private final Label statusLabel;
     private final Label shotCountLabel;
@@ -25,15 +21,6 @@ public class ControlPanel {
     private TextField muSField;
 
     public ControlPanel(CourseProfile course) {
-        vxField = new TextField("0.0");
-        vyField = new TextField("0.0");
-        // to make sure the interface of the game doesn't move because the textfields become bigger/smaller
-        vxField.setPrefWidth(150);
-        vxField.setMinWidth(150);
-        vxField.setMaxWidth(150);
-        vyField.setPrefWidth(150);
-        vyField.setMinWidth(150);
-        vyField.setMaxWidth(150);
 
         // use this to hardcode the textfield (when course input didnt give starting position)
         // also change public ControlPanel(CourseProfile course) to public ControlPanel()
@@ -51,10 +38,8 @@ public class ControlPanel {
         solverPicker.setValue("rk4");
         solverPicker.setMaxWidth(150);
 
-        shootButton   = new Button("Shoot");
-        resetButton   = new Button("Reset");
+        resetButton = new Button("Reset");
         botButton = new Button("Bot shot");
-        shootButton.setMaxWidth(Double.MAX_VALUE);
         resetButton.setMaxWidth(Double.MAX_VALUE);
         botButton.setMaxWidth(Double.MAX_VALUE);
 
@@ -86,17 +71,14 @@ public class ControlPanel {
         // initialize the textfields for the friction
         muKField = new TextField("0.08");
         muSField = new TextField("0.2");
-        muKField.setMaxWidth(150);
-        muSField.setMaxWidth(150);
+        muKField.setMaxWidth(130);
+        muSField.setMaxWidth(130);
 
         // show labels and textfields
         panel = new VBox(10,
             new Label("Power (0-5):"), powerField,
-            new Label("vx:"), vxField,
-            new Label("vy:"), vyField,
             new Label("Solver:"), solverPicker,
             new Separator(),
-            shootButton,
             resetButton,
             botButton,
             new Separator(),
@@ -109,8 +91,8 @@ public class ControlPanel {
             new HBox(5, new Label("y"), targetYField),
             new Separator(),
             new Label("Friction:"),
-            new HBox(5, new Label("µK"), muKField),
-            new HBox(5, new Label("µS"), muSField),
+            new HBox(5, new Label("\u00B5k"), muKField), // label µk
+            new HBox(5, new Label("\u00B5s"), muSField), // label µs
             new Separator(),
             shotCountLabel,
             statusLabel,
@@ -122,28 +104,6 @@ public class ControlPanel {
     public VBox getPanel() {return panel;}
 
     public String getSelectedSolver() { return solverPicker.getValue(); }
-
-    public void setOnShoot(Consumer<double[]> handler) {
-        shootButton.setOnAction(e -> {
-            try {
-                double vx = Double.parseDouble(vxField.getText());
-                double vy = Double.parseDouble(vyField.getText());
-                double power = Double.parseDouble(powerField.getText());
-                
-                // ensures that the power is between 0 and 5
-                power = Math.max(0, Math.min(5.0, power));
-
-                double speed = Math.max(0, Math.sqrt(vx*vy + vy*vy));
-                if (speed > 1e-6) { // cant divide by zero
-                    vx = (vx / speed) * power;
-                    vy = (vy / speed) * power;
-                }
-                handler.accept(new double[]{vx, vy});
-            } catch (NumberFormatException ex) {
-                setStatus("Invalid input", Color.RED);
-            }
-        });
-    }
 
     public void setOnReset(Runnable handler) {
         resetButton.setOnAction(e -> handler.run());
@@ -182,11 +142,6 @@ public class ControlPanel {
         }
     }
 
-    public void setShootEnabled(boolean enabled) {
-        shootButton.setDisable(!enabled);
-        botButton.setDisable(!enabled);
-    }
-
     public double[] getTargetPosition() {
         try {
             return new double[]{
@@ -207,5 +162,17 @@ public class ControlPanel {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    public double[] getPower() {
+        try {
+            return new double[]{Double.parseDouble(powerField.getText())};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public void setBotEnabled(boolean enabled) {
+        botButton.setDisable(!enabled);
     }
 }

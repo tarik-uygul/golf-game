@@ -13,7 +13,7 @@ public interface CourseProfile {
     double getCourseHeight();
 
     // the default color for water/grass, can change this by overriding in the method (or change it the default color here)
-    default Color getGrassColor()  { return Color.FORESTGREEN; }
-    default Color getHighColor()   { return Color.DARKGREEN; }
+    default Color getGrassColor()  { return Color.GREENYELLOW; }
+    default Color getHighColor()   { return Color.GREEN; }
     default Color getWaterColor()  { return Color.CORNFLOWERBLUE; }
 }

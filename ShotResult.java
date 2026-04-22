@@ -2,7 +2,7 @@ import java.util.List;
 
 public class ShotResult {
 
-    public enum Outcome { IN_TARGET, IN_WATER, STOPPED, TIMEOUT }
+    public enum Outcome { IN_TARGET, IN_WATER, OUT_OF_BOUNDS, STOPPED, TIMEOUT }
 
     private final List<double[]> path;
     private final Outcome outcome;

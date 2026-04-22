@@ -24,6 +24,6 @@ public class CourseConfiguration {
         this.targetX = targetX;
         this.targetY = targetY;
         this.targetRadius = targetRadius;
-        this.stepSize = stepSize;
+        this.stepSize = stepSize; 
     }
 }

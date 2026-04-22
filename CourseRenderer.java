@@ -7,10 +7,15 @@ public class CourseRenderer {
 
     private final Canvas canvas;
     private final GraphicsContext gc; // for drawing stuff
-    private final CourseProfile course;
+    private CourseProfile course;
 
     private final double scaleX;
     private final double scaleY;
+
+    private boolean MessageOnScreen = false;
+    private Runnable afterMessageDismissed = null;
+
+    private double[] currentBallPosition = null;
 
     // resolution of the terrain (more is nicer but slower)
     private static final int gridResolution = 100;
@@ -67,6 +72,7 @@ public class CourseRenderer {
         if (height < 0) return course.getWaterColor();
 
         double t = (maxH == minH) ? 0.5 : (height - minH) / (maxH - minH);
+
         return course.getHighColor().interpolate(course.getGrassColor(), t);
     }
 
@@ -107,15 +113,24 @@ public class CourseRenderer {
         );
     }
 
+    public void setCurrentBallPosition(double[] position) {
+        this.currentBallPosition = position;
+    }
+
     private void drawStartPosition() {
-        double[] s = course.getStartPosition();
-        gc.setFill(Color.YELLOW);
+        double[] s = (currentBallPosition != null)
+        ? currentBallPosition
+        : course.getStartPosition();
+        gc.setFill(Color.WHITE);
         gc.fillOval(toPixelX(s[0]) - 5, toPixelY(s[1]) - 5, 10, 10);
     }
 
     // for some messages (so they can't be missed, like when the ball falls in the water or when the ball reaches the target)
     // they go away after some amount of seconds (chosen in simulation controller) automatically but also when you click somewhere on the screen
     public void drawInfoMessage(String line1, String line2, Color color, Runnable onDone) {
+        MessageOnScreen = true;
+        afterMessageDismissed = onDone;
+
         double w = canvas.getWidth();
         double h = canvas.getHeight();
 
@@ -135,13 +150,45 @@ public class CourseRenderer {
         gc.fillText(line2, w / 2, h / 2 + 30);
         gc.fillText("\n(click to continue)", w / 2, h / 2 + 70);
         gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
+    }
 
-        // message disappears when clicking on the interface
-        canvas.setOnMouseClicked(event -> {
-            clearPaths();
-            canvas.setOnMouseClicked(null); // unregister the click so future clicks dont accidentally "skip" the next message
-            if (onDone != null) onDone.run();
-        });
+    public void drawArrow(double fromX, double fromY, double toX, double toY) {
+        clearPaths();
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(2.5);
+        gc.strokeLine(fromX, fromY, toX, toY);
+
+        // create the pointer of the arrow
+        double angle = Math.atan2(toY - fromY, toX - fromX);
+        double arrowSize = 12;
+        gc.setFill(Color.WHITE);
+        double x1 = toX - arrowSize * Math.cos(angle - Math.PI / 6);
+        double y1 = toY - arrowSize * Math.sin(angle - Math.PI / 6);
+        double x2 = toX - arrowSize * Math.cos(angle + Math.PI / 6);
+        double y2 = toY - arrowSize * Math.sin(angle + Math.PI / 6);
+        gc.fillPolygon(new double[]{toX, x1, x2}, new double[]{toY, y1, y2}, 3);
+    }
+
+    public boolean isMessageOnScreen() { return MessageOnScreen; }
+
+    public void dismissMessage() {
+        MessageOnScreen = false;
+        clearPaths();
+        Runnable callback = afterMessageDismissed; // callback stores the code to run when the message is dismissed
+        afterMessageDismissed = null;
+        if (callback != null) callback.run();
+    }
+
+    // this converts pixel coordinates back to course coordinates
+    public double toWorldX(double pixelX) { return pixelX / scaleX; }
+    public double toWorldY(double pixelY) { return (canvas.getHeight() - pixelY) / scaleY; }
+
+    // this converts course coordinates to pixel coordinates
+    public double toPixelXPublic(double x) { return toPixelX(x); }
+    public double toPixelYPublic(double y) { return toPixelY(y); }
+
+    public void updateCourse(CourseProfile course) {
+        this.course = course;
     }
 
     public void clearPaths() {

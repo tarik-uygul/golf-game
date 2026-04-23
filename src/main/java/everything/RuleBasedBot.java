@@ -1,6 +1,6 @@
 package everything;
 
-public class RuleBasedBot implements SimulationController.GolfBot {
+public class RuleBasedBot implements GolfBot {
 //manual gives maximum speed of 5 m/s for the ball, prevents the ball from suggesting unrealistic shots
     private static final double MAX_SPEED = 5.0;
 

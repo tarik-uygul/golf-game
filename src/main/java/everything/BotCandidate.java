@@ -9,5 +9,7 @@ public class BotCandidate {
         this.vx = vx;
         this.vy = vy;
         this.score = score;
+
+
     }
 }

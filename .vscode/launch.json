@@ -1,0 +1,34 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Visualizer",
+            "request": "launch",
+            "mainClass": "Visualizer",
+            "vmArgs": "--module-path /Users/nico/Desktop/javafx-sdk-25.0.1/lib --add-modules javafx.controls"
+        },
+        {
+            "type": "java",
+            "name": "Run LogLogPlot",
+            "request": "launch",
+            "mainClass": "LogLogPlot",
+            "vmArgs": "--module-path /Users/nico/Desktop/javafx-sdk-25.0.1/lib --add-modules javafx.controls"
+        },
+        {
+            "type": "java",
+            "name": "Run SampleAccuracyTestSuite",
+            "request": "launch",
+            "mainClass": "SampleAccuracyTestSuite"
+        },
+        {
+            "type": "java",
+            "name": "Launch GolfApp",
+            "request": "launch",
+            "mainClass": "GolfApp",
+            "vmArgs": "--module-path /Users/nico/Desktop/javafx-sdk-25.0.1/lib --add-modules javafx.controls,javafx.fxml,javafx.graphics"
+        }
+    ]
+}
+
+

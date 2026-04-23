@@ -18,11 +18,15 @@ public class ControlPanel {
     private TextField startXField;
     private TextField startYField;
     private Button botButton;
+    private final TextField powerField;
+    private TextField targetXField;
+    private TextField targetYField;
+    private TextField muKField;
+    private TextField muSField;
 
-    public ControlPanel(CourseProfile course) {
+    public ControlPanel(CourseInputModuleStorage course) {
         vxField = new TextField("0.0");
         vyField = new TextField("0.0");
-        // to make sure the interface of the game doesn't move because the textfields become bigger/smaller
         vxField.setPrefWidth(150);
         vxField.setMinWidth(150);
         vxField.setMaxWidth(150);
@@ -30,14 +34,8 @@ public class ControlPanel {
         vyField.setMinWidth(150);
         vyField.setMaxWidth(150);
 
-        // use this to hardcode the textfield (when course input didnt give starting position)
-        // also change public ControlPanel(CourseProfile course) to public ControlPanel()
-        // and ControlPanel controls = new ControlPanel(course); to ControlPanel controls = new ControlPanel(); (in GolfApp.java)
-        // startXField = new TextField("7.0"); // starting position when user didn't input an x value (yet)
-        // startYField = new TextField("8.0"); // starting position when user didn't input a y value (yet)
-        double[] start = course.getStartPosition();
-        startXField = new TextField(String.valueOf(start[0])); //default starting position if in the courseprofile
-        startYField = new TextField(String.valueOf(start[1])); // default starting position if in the courseprofile
+        startXField = new TextField(String.valueOf(course.startX));
+        startYField = new TextField(String.valueOf(course.startY));
         startXField.setMaxWidth(150);
         startYField.setMaxWidth(150);
 
@@ -57,7 +55,6 @@ public class ControlPanel {
         shotCountLabel.setWrapText(true);
         shotCountLabel.setMaxWidth(150);
 
-        // shows the status/messages, such as invalid input, etc.
         statusLabel = new Label("");
         statusLabel.setWrapText(true);
         statusLabel.setMaxWidth(150);
@@ -66,8 +63,23 @@ public class ControlPanel {
         positionLabel.setWrapText(true);
         positionLabel.setMaxWidth(150);
 
-        // show labels and textfields
+        powerField = new TextField("1.0");
+        powerField.setPrefWidth(150);
+        powerField.setMinWidth(150);
+        powerField.setMaxWidth(150);
+
+        targetXField = new TextField(String.valueOf(course.targetX));
+        targetYField = new TextField(String.valueOf(course.targetY));
+        targetXField.setMaxWidth(150);
+        targetYField.setMaxWidth(150);
+
+        muKField = new TextField(String.valueOf(course.muK));
+        muSField = new TextField(String.valueOf(course.muS));
+        muKField.setMaxWidth(150);
+        muSField.setMaxWidth(150);
+
         panel = new VBox(10,
+            new Label("Power (0-5):"), powerField,
             new Label("vx:"), vxField,
             new Label("vy:"), vyField,
             new Label("Solver:"), solverPicker,
@@ -80,6 +92,14 @@ public class ControlPanel {
             new HBox(5, new Label("x"), startXField),
             new HBox(5, new Label("y"), startYField),
             new Separator(),
+            new Label("Target Position:"),
+            new HBox(5, new Label("x"), targetXField),
+            new HBox(5, new Label("y"), targetYField),
+            new Separator(),
+            new Label("Friction:"),
+            new HBox(5, new Label("µK"), muKField),
+            new HBox(5, new Label("µS"), muSField),
+            new Separator(),
             shotCountLabel,
             statusLabel,
             positionLabel
@@ -87,7 +107,7 @@ public class ControlPanel {
         panel.setPadding(new Insets(10));
     }
 
-    public VBox getPanel() {return panel;}
+    public VBox getPanel() { return panel; }
 
     public String getSelectedSolver() { return solverPicker.getValue(); }
 
@@ -96,11 +116,14 @@ public class ControlPanel {
             try {
                 double vx = Double.parseDouble(vxField.getText());
                 double vy = Double.parseDouble(vyField.getText());
+                double power = Double.parseDouble(powerField.getText());
+
+                power = Math.max(0, Math.min(5.0, power));
+
                 double speed = Math.sqrt(vx*vx + vy*vy);
-                double maxSpeed = 5.0;
-                if (speed > maxSpeed) {
-                    vx = vx / speed * maxSpeed;
-                    vy = vy / speed * maxSpeed;
+                if (speed > 1e-6) {
+                    vx = (vx / speed) * power;
+                    vy = (vy / speed) * power;
                 }
                 handler.accept(new double[]{vx, vy});
             } catch (NumberFormatException ex) {
@@ -129,12 +152,12 @@ public class ControlPanel {
     public void setPosition(double x, double y) {
         positionLabel.setText(String.format("x: %.2f\ny: %.2f", x, y));
     }
+
     public void clearStatus() {
         statusLabel.setText("");
         positionLabel.setText("");
     }
 
-    // reads input from textfieldss
     public double[] getStartPosition() {
         try {
             return new double[]{
@@ -149,5 +172,27 @@ public class ControlPanel {
     public void setShootEnabled(boolean enabled) {
         shootButton.setDisable(!enabled);
         botButton.setDisable(!enabled);
+    }
+
+    public double[] getTargetPosition() {
+        try {
+            return new double[]{
+                Double.parseDouble(targetXField.getText()),
+                Double.parseDouble(targetYField.getText())
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public double[] getFriction() {
+        try {
+            return new double[]{
+                Double.parseDouble(muKField.getText()),
+                Double.parseDouble(muSField.getText())
+            };
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

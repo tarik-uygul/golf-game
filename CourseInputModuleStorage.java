@@ -3,7 +3,7 @@
  * If not at least this class can be easily changed
  */
 
-public class CourseConfiguration {
+public class CourseInputModuleStorage {
 
     public HeightFunction heightFunction;
     public double muK;
@@ -13,7 +13,7 @@ public class CourseConfiguration {
     public double targetRadius;
     public double stepSize;
 
-    public CourseConfiguration(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
+    public CourseInputModuleStorage(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
                         double targetX, double targetY, double targetRadius,
                         double stepSize) {
         this.heightFunction = heightFunction;

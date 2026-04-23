@@ -16,8 +16,8 @@ public class GolfApp extends Application {
     @Override
     public void start(Stage stage) {
         try {
-            CourseInputProcessing processor = new CourseInputProcessing();
-        CourseConfiguration configuration = processor.buildConfig(
+            CourseInputModule processor = new CourseInputModule();
+        CourseInputModuleStorage configuration = processor.buildConfig(
                 "1.0",        // ← no sin/cos, guaranteed to parse
                 "0.08", "0.2",
                 "7.0", "8.0",
@@ -30,7 +30,7 @@ public class GolfApp extends Application {
             // "0.1", "0.01" // radius, stepSize
         );
 
-        CourseProfile course = new CourseConfigurationProfile(configuration);
+        CourseInputModuleStorage course = configuration;
 
         // the course renderer handles all drawings on the canvas
         CourseRenderer renderer = new CourseRenderer(course, interfaceWidth, interfaceHeight);

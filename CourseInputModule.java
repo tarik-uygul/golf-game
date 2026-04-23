@@ -13,13 +13,13 @@ import java.util.Map;
  *   Basically all the sanity checks babes
  *   Later this should evaluate strings as inputs from the GUI (text fields?)
  */
-public class CourseInputProcessing {
+public class CourseInputModule {
 
     private final ExpressionParser parser = new ExpressionParser();
     private static final String[] vars = {"x", "y"};
     private static final Map<String, Double> noConstants = Map.of();
 
-    public CourseConfiguration buildConfig(String heightExpr,
+    public CourseInputModuleStorage buildConfig(String heightExpr,
                                     String muKStr, String muSStr,
                                     String startXStr, String startYStr,
                                     String targetXStr, String targetYStr,
@@ -58,7 +58,7 @@ public class CourseInputProcessing {
                     "Invalid height expression: " + e.getMessage());
         }
 
-        return new CourseConfiguration(new HeightFunction(cleanExpr),
+        return new CourseInputModuleStorage(new HeightFunction(cleanExpr),
                 muK, muS, startX, startY, targetX, targetY,
                 radius, stepSize);
     }

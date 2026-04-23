@@ -12,6 +12,10 @@ public class CourseRenderer {
     private final double scaleX;
     private final double scaleY;
 
+    private javafx.animation.AnimationTimer ballAnimation;
+    private int animationStep = 0;
+    private List<double[]> animationPath;
+
     private boolean MessageOnScreen = false;
     private Runnable afterMessageDismissed = null;
 
@@ -80,36 +84,33 @@ public class CourseRenderer {
         gc.setFill(Color.WHITE);
         gc.setStroke(Color.BLACK);
         gc.fillOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12);
-        gc.strokeOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12);
+        // gc.strokeOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12); //add this for border around ball
     }
 
-    public void drawBallPath(List<double[]> path) {
-        gc.setStroke(Color.WHITE);
-        gc.setLineWidth(1.5);
-        for (int i = 1; i < path.size(); i++) {
-            double[] prev = path.get(i - 1);
-            double[] curr = path.get(i);
-            gc.strokeLine(toPixelX(prev[0]), toPixelY(prev[1]),
-                          toPixelX(curr[0]), toPixelY(curr[1]));
-        }
-        // draw final ball position
-        double[] last = path.get(path.size() - 1);
-        drawBall(last[0], last[1]);
-    }
-
-
-
-    private void drawTarget() {
+        private void drawTarget() {
         double[] t  = course.getTargetPosition();
-        double r    = course.getTargetRadius();
-        double pixR = Math.max(r * scaleX, 6); // at least 6px so it's always visible
+        double pixX = toPixelX(t[0]);
+        double pixY = toPixelY(t[1]);
 
+        // hole/target
+        double holeRadius = Math.max(course.getTargetRadius() * scaleX, 6);
+        gc.setFill(Color.BLACK);
+        gc.fillOval(pixX - holeRadius, pixY - holeRadius, holeRadius * 2, holeRadius * 2);
+
+        // pole
+        double poleHeight = 30;  // amount of pixels tall
+        double poleWidth  = 2;
+        gc.setFill(Color.WHITE);
+        gc.fillRect(pixX - poleWidth / 2, pixY - poleHeight, poleWidth, poleHeight);
+
+        // flag
+        double flagWidth  = 16;
+        double flagHeight = 12;
         gc.setFill(Color.RED);
-        gc.fillOval(
-            toPixelX(t[0]) - pixR,
-            toPixelY(t[1]) - pixR,
-            pixR * 2,
-            pixR * 2
+        gc.fillPolygon(
+            new double[]{pixX, pixX + flagWidth, pixX},               // x points
+            new double[]{pixY - poleHeight, pixY - poleHeight + flagHeight / 2, pixY - poleHeight + flagHeight}, // y points
+            3
         );
     }
 
@@ -167,6 +168,51 @@ public class CourseRenderer {
         double x2 = toX - arrowSize * Math.cos(angle + Math.PI / 6);
         double y2 = toY - arrowSize * Math.sin(angle + Math.PI / 6);
         gc.fillPolygon(new double[]{toX, x1, x2}, new double[]{toY, y1, y2}, 3);
+    }
+
+    public void animateBall(List<double[]> path, Runnable onFinished) {
+        if (ballAnimation != null) ballAnimation.stop();
+
+        animationPath = path;
+        animationStep = 0;
+
+        int totalSteps = path.size();
+        int stepsPerFrame = Math.max(1, totalSteps / 1000);
+
+        ballAnimation = new javafx.animation.AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (animationStep >= animationPath.size()) {
+                    stop();
+                    if (onFinished != null) onFinished.run();
+                    return;
+                }
+
+                double[] pos = animationPath.get(animationStep);
+
+                // stop early if ball has essentially stopped moving
+                // instead of waiting for all remaining steps to play out
+                if (animationStep > 0) {
+                    double[] prev = animationPath.get(animationStep - stepsPerFrame < 0
+                        ? 0 : animationStep - stepsPerFrame);
+                    double dx = pos[0] - prev[0];
+                    double dy = pos[1] - prev[1];
+                    double distanceMoved = Math.sqrt(dx*dx + dy*dy);
+                    if (distanceMoved < 0.001) { // less than 1mm per frame = effectively stopped
+                        stop();
+                        drawCourse();
+                        drawBall(pos[0], pos[1]);
+                        if (onFinished != null) onFinished.run();
+                        return;
+                    }
+                }
+
+                drawCourse();
+                drawBall(pos[0], pos[1]);
+                animationStep += stepsPerFrame;
+            }
+        };
+        ballAnimation.start();
     }
 
     public boolean isMessageOnScreen() { return MessageOnScreen; }

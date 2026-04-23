@@ -13,6 +13,8 @@ public class SimulationController {
     private GolfBot bot = null;
     private boolean isDragging = false;
     private double dragStartPixelX, dragStartPixelY;
+    private static final double MAX_DRAG_PIXELS = 150.0;
+    private static final double MAX_SPEED = 5.0;
 
     public SimulationController(CourseProfile course, CourseRenderer renderer, ControlPanel controls, double dt, double maxTime) {
         this.course = course;
@@ -99,14 +101,14 @@ public class SimulationController {
 
         double dx = event.getX() - dragStartPixelX;
         double dy = event.getY() - dragStartPixelY;
+        double dragLength = Math.sqrt(dx*dx + dy*dy);
+
+        // power based on drag length
+        double power = Math.min(dragLength, MAX_DRAG_PIXELS) / MAX_DRAG_PIXELS * MAX_SPEED;
 
         // direction determined by dragging, power determined from the input field
         // dy is negative because the on a computer screen y is at the top but on the course y is at the bottom
         double angle = Math.atan2(-dy, dx);
-        
-        double[] powerInput = controls.getPower();
-        double power = (powerInput != null) ? powerInput[0] : 1.0;
-        power = Math.max(0, Math.min(5.0, power)); // power is a value between 0 and 5
 
         double vx = power * Math.cos(angle);
         double vy = power * Math.sin(angle);
@@ -125,11 +127,17 @@ public class SimulationController {
 
         controls.updateShotCount(shotCount);
         controls.setPosition(result.getFinalX(), result.getFinalY());
+        
+        // animate first, handle outcome after
+        renderer.animateBall(result.getPath(), () -> {
+            handleOutcome(result);
+        });
+    }
 
+    private void handleOutcome(ShotResult result) {
         // the result depending on the outcome of the shot
         switch (result.getOutcome()) {
             case IN_TARGET -> {
-                renderer.drawBallPath(result.getPath()); // draws a path to target
                 String line1 = shotCount == 1 ? "HOLE IN ONE!" : "IN THE HOLE!";
                 String line2 = shotCount == 1 ? "Amazing!" 
                              : "Completed in " + shotCount + " putts";
@@ -145,7 +153,6 @@ public class SimulationController {
                 shotCount = 0;
             }
             case IN_WATER -> {
-                renderer.drawBallPath(result.getPath()); // show path into water first
                 controls.setStatus("Water!", Color.CORNFLOWERBLUE);
                     renderer.drawInfoMessage(
                         "Penalty",
@@ -161,7 +168,6 @@ public class SimulationController {
                     );
             }
             case OUT_OF_BOUNDS -> {
-                renderer.drawBallPath(result.getPath()); // show that the ball goes out of bounds
                 controls.setStatus("Out of bounds!", Color.BLACK);
                     renderer.drawInfoMessage(
                     "Penalty",
@@ -178,8 +184,6 @@ public class SimulationController {
             }
             case STOPPED, TIMEOUT -> {
                 // draws path, updates position, player shoots from here next
-                // after most of the shots
-                renderer.drawBallPath(result.getPath());
                 currentPosition = new double[]{result.getFinalX(), result.getFinalY()};
                 renderer.setCurrentBallPosition(currentPosition);
             }

@@ -14,7 +14,6 @@ public class ControlPanel {
     private TextField startXField;
     private TextField startYField;
     private Button botButton;
-    private final TextField powerField;
     private TextField targetXField;
     private TextField targetYField;
     private TextField muKField;
@@ -56,15 +55,10 @@ public class ControlPanel {
         positionLabel.setWrapText(true);
         positionLabel.setMaxWidth(150);
 
-        // initialize the textfield for the power of the shot
-        powerField = new TextField("1.0");
-        powerField.setPrefWidth(150);
-        powerField.setMinWidth(150);
-        powerField.setMaxWidth(150);
-
         // initialize the textfields for the position of the target
         targetXField = new TextField("14.0");
         targetYField = new TextField("1.0");
+        targetXField.setMinWidth(150);
         targetXField.setMaxWidth(150);
         targetYField.setMaxWidth(150);
 
@@ -76,7 +70,6 @@ public class ControlPanel {
 
         // show labels and textfields
         panel = new VBox(10,
-            new Label("Power (0-5):"), powerField,
             new Label("Solver:"), solverPicker,
             new Separator(),
             resetButton,
@@ -159,14 +152,6 @@ public class ControlPanel {
                 Double.parseDouble(muKField.getText()),
                 Double.parseDouble(muSField.getText())
             };
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    public double[] getPower() {
-        try {
-            return new double[]{Double.parseDouble(powerField.getText())};
         } catch (NumberFormatException e) {
             return null;
         }

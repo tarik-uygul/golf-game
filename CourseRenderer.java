@@ -45,7 +45,8 @@ public class CourseRenderer {
         double cellH = canvas.getHeight() / gridResolution;
 
         // look at the heights across the whole course first so we know the full range for color scaling
-        double minH = Double.MAX_VALUE, maxH = -Double.MAX_VALUE;
+        double minH = Double.MAX_VALUE;
+        double maxH = -Double.MAX_VALUE;
         double[][] heights = new double[gridResolution][gridResolution];
         for (int i = 0; i < gridResolution; i++) {
             for (int j = 0; j < gridResolution; j++) {
@@ -153,16 +154,32 @@ public class CourseRenderer {
         gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
     }
 
-    public void drawArrow(double fromX, double fromY, double toX, double toY) {
+    public void drawArrow(double fromX, double fromY, double toX, double toY, double dragLength, double maxDragPixels) {
         clearPaths();
-        gc.setStroke(Color.WHITE);
+
+            // t stores a value between 0 and 1 that resembles the power
+            double t = Math.min(dragLength / maxDragPixels, 1.0);
+
+            // changes the colour of the arrow to match the power
+            // yellow (low power), orange (medium power), red (high power)
+            Color arrowColor;
+            if (t < 0.75) {
+                // yellow to orange
+                arrowColor = Color.YELLOW.interpolate(Color.ORANGE, t/0.75 );
+            } else {
+                // orange to red
+                arrowColor = Color.ORANGE.interpolate(Color.RED, (t - 0.75) / 0.25);
+            }
+
+        gc.setStroke(arrowColor);
+        gc.setFill(arrowColor);
         gc.setLineWidth(2.5);
         gc.strokeLine(fromX, fromY, toX, toY);
 
         // create the pointer of the arrow
         double angle = Math.atan2(toY - fromY, toX - fromX);
         double arrowSize = 12;
-        gc.setFill(Color.WHITE);
+        gc.setFill(arrowColor);
         double x1 = toX - arrowSize * Math.cos(angle - Math.PI / 6);
         double y1 = toY - arrowSize * Math.sin(angle - Math.PI / 6);
         double x2 = toX - arrowSize * Math.cos(angle + Math.PI / 6);

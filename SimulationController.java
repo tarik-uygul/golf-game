@@ -80,19 +80,19 @@ public class SimulationController {
 
         // set a max to the length of the arrow
         double maxArrowPixels = 50.0;
-        double maxX;
-        double maxY;
+        double clampedX;
+        double clampedY;
         if (dragLength > maxArrowPixels) {
             // keep direction but limit length
             double angle = Math.atan2(dy, dx);
-            maxX = dragStartPixelX + maxArrowPixels * Math.cos(angle);
-            maxY = dragStartPixelY + maxArrowPixels * Math.sin(angle);
+            clampedX = dragStartPixelX + maxArrowPixels * Math.cos(angle);
+            clampedY = dragStartPixelY + maxArrowPixels * Math.sin(angle);
         } else {
-            maxX = event.getX();
-            maxY = event.getY();
+            clampedX = event.getX();
+            clampedY = event.getY();
         }
 
-        renderer.drawArrow(dragStartPixelX, dragStartPixelY, maxX, maxY);
+        renderer.drawArrow(dragStartPixelX, dragStartPixelY, clampedX, clampedY, dragLength, maxArrowPixels);
     });
 
     renderer.getCanvas().setOnMouseReleased(event -> {
@@ -148,6 +148,7 @@ public class SimulationController {
                         course.getStartPosition()[0],
                         course.getStartPosition()[1]
                     );
+                    handleReset(); // resets everything after game is over
                 });
                 currentPosition = course.getStartPosition().clone();
                 shotCount = 0;

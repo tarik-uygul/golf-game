@@ -14,7 +14,8 @@ public class SimulationController {
     private final double maxTime;
     private GolfBot bot = null;
 
-    public SimulationController(CourseProfile course, CourseRenderer renderer, ControlPanel controls, double dt, double maxTime) {
+    public SimulationController(CourseProfile course, CourseRenderer renderer, ControlPanel controls, double dt,
+            double maxTime) {
         this.course = course;
         this.renderer = renderer;
         this.controls = controls;
@@ -29,9 +30,28 @@ public class SimulationController {
         controls.setOnShoot(this::handleShot);
         controls.setOnReset(this::handleReset);
         controls.setOnBotShoot(() -> {
+            String selectedBot = controls.getSelectedBot();
+
             if (bot == null) {
                 controls.setStatus("No bot loaded.", Color.RED);
                 return;
+            }
+            controls.setStatus("Bot is calculating shot...", Color.BLUE);
+
+            switch (selectedBot) {
+                case "Hill Climbing":
+                    bot = new Hill_Climbing_Bot(dt, maxTime, controls.getSelectedSolver());
+
+                    break;
+
+                case "Newton Raphson":
+                    bot = new Newton_Raphson_Bot(dt, maxTime, controls.getSelectedSolver());
+
+                    break;
+                case "Rule Based":
+                    bot = new RuleBasedBot(dt, maxTime);
+                    break;
+
             }
             double[] velocity = bot.computeShot(currentPosition, course);
             handleShot(velocity);
@@ -61,8 +81,7 @@ public class SimulationController {
                     controls.clearStatus();
                     renderer.drawBall(
                             course.getStartPosition()[0],
-                            course.getStartPosition()[1]
-                    );
+                            course.getStartPosition()[1]);
                 });
                 currentPosition = course.getStartPosition().clone();
                 shotCount = 0;
@@ -75,19 +94,18 @@ public class SimulationController {
                         "Ball went into the water :( \nReplaying from previous position.",
                         Color.CORNFLOWERBLUE,
                         () -> {
-                            // after the message disappears,  the ball resets to the location before the shot
+                            // after the message disappears, the ball resets to the location before the shot
                             currentPosition = positionBeforeShot.clone();
                             renderer.clearPaths();
                             renderer.drawBall(currentPosition[0], currentPosition[1]);
                             controls.clearStatus();
-                        }
-                );
+                        });
             }
             case STOPPED, TIMEOUT -> {
                 // draws path, updates position, player shoots from here next
                 // after most of the shots
                 renderer.drawBallPath(result.getPath());
-                currentPosition = new double[]{result.getFinalX(), result.getFinalY()};
+                currentPosition = new double[] { result.getFinalX(), result.getFinalY() };
             }
         }
     }
@@ -104,9 +122,7 @@ public class SimulationController {
         renderer.drawBall(currentPosition[0], currentPosition[1]);
     }
 
-    public void setBot(GolfBot bot) { this.bot = bot; }
-
-    public interface GolfBot {
-        double[] computeShot(double[] currentPosition, CourseProfile course);
+    public void setBot(GolfBot bot) {
+        this.bot = bot;
     }
 }

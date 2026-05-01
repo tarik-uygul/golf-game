@@ -32,10 +32,6 @@ public class SimulationController {
         controls.setOnBotShoot(() -> {
             String selectedBot = controls.getSelectedBot();
 
-            if (bot == null) {
-                controls.setStatus("No bot loaded.", Color.RED);
-                return;
-            }
             controls.setStatus("Bot is calculating shot...", Color.BLUE);
 
             switch (selectedBot) {
@@ -51,6 +47,9 @@ public class SimulationController {
                 case "Rule Based":
                     bot = new RuleBasedBot(dt, maxTime);
                     break;
+                default:
+                    controls.setStatus("No bot loaded.", Color.RED);
+                    return;
 
             }
             double[] velocity = bot.computeShot(currentPosition, course);

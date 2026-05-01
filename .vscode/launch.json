@@ -5,6 +5,13 @@
             "type": "java",
             "name": "GolfApp",
             "request": "launch",
+            "mainClass": "src.main.java.everything.GolfApp",
+            "projectName": "team_02_ecd46f8d"
+        },
+        {
+            "type": "java",
+            "name": "GolfApp",
+            "request": "launch",
             "mainClass": "GolfApp",
             "projectName": "team_02_ecd46f8d"
         },

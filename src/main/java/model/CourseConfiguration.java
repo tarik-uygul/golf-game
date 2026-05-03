@@ -1,3 +1,5 @@
+package model;
+
 /**
  * All the containers we need I think
  * If not at least this class can be easily changed
@@ -14,8 +16,8 @@ public class CourseConfiguration {
     public double stepSize;
 
     public CourseConfiguration(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
-                        double targetX, double targetY, double targetRadius,
-                        double stepSize) {
+            double targetX, double targetY, double targetRadius,
+            double stepSize) {
         this.heightFunction = heightFunction;
         this.muK = muK;
         this.muS = muS;

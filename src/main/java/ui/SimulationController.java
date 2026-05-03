@@ -1,4 +1,13 @@
+package ui;
+
+import bots.GolfBot;
+import bots.Hill_Climbing_Bot;
+import bots.Newton_Raphson_Bot;
+import bots.RuleBasedBot;
 import javafx.scene.paint.Color;
+import model.CourseProfile;
+import model.GolfSimulator;
+import model.ShotResult;
 
 public class SimulationController {
 
@@ -16,7 +25,8 @@ public class SimulationController {
     private static final double MAX_DRAG_PIXELS = 150.0;
     private static final double MAX_SPEED = 5.0;
 
-    public SimulationController(CourseProfile course, CourseRenderer renderer, ControlPanel controls, double dt, double maxTime) {
+    public SimulationController(CourseProfile course, CourseRenderer renderer, ControlPanel controls, double dt,
+            double maxTime) {
         this.course = course;
         this.renderer = renderer;
         this.controls = controls;
@@ -30,9 +40,27 @@ public class SimulationController {
 
         controls.setOnReset(this::handleReset);
         controls.setOnBotShoot(() -> {
-            if (bot == null) {
-                controls.setStatus("No bot loaded.", Color.RED);
-                return;
+            String selectedBot = controls.getSelectedBot();
+
+            controls.setStatus("Bot is calculating shot...", Color.BLUE);
+
+            switch (selectedBot) {
+                case "Hill Climbing":
+                    bot = new Hill_Climbing_Bot(dt, maxTime, controls.getSelectedSolver());
+
+                    break;
+
+                case "Newton Raphson":
+                    bot = new Newton_Raphson_Bot(dt, maxTime, controls.getSelectedSolver());
+
+                    break;
+                case "Rule Based":
+                    bot = new RuleBasedBot(dt, maxTime);
+                    break;
+                default:
+                    controls.setStatus("No bot loaded.", Color.RED);
+                    return;
+
             }
             // disables the button while thinking so the user doesnt keep clicking
             controls.setBotEnabled(false);
@@ -145,9 +173,8 @@ public class SimulationController {
                     controls.updateShotCount(0);
                     controls.clearStatus();
                     renderer.drawBall(
-                        course.getStartPosition()[0],
-                        course.getStartPosition()[1]
-                    );
+                            course.getStartPosition()[0],
+                            course.getStartPosition()[1]);
                     handleReset(); // resets everything after game is over
                 });
                 currentPosition = course.getStartPosition().clone();
@@ -236,9 +263,7 @@ public class SimulationController {
         renderer.drawBall(currentPosition[0], currentPosition[1]);
     }
 
-    public void setBot(GolfBot bot) { this.bot = bot; }
-
-    public interface GolfBot {
-        double[] computeShot(double[] currentPosition, CourseProfile course);
+    public void setBot(GolfBot bot) {
+        this.bot = bot;
     }
 }

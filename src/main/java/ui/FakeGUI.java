@@ -1,21 +1,25 @@
+package ui;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import physics.ODESystemBuilder;
 
 public class FakeGUI {
 
     public static void main(String[] args) {
 
         // fake GUI inputs - these will come from real GUI input boxes later
-        String[] names = {"x", "y"};
-        String[] equations = {"a*x - b*x*y", "d*x*y - g*y"};
-        
+        String[] names = { "x", "y" };
+        String[] equations = { "a*x - b*x*y", "d*x*y - g*y" };
+
         Map<String, Double> constants = new HashMap<>();
         constants.put("a", 0.25);
         constants.put("b", 0.15);
         constants.put("d", 0.10);
         constants.put("g", 0.10);
 
-        double[] initialConditions = {20.0, 2.0};
+        double[] initialConditions = { 20.0, 2.0 };
         double stepSize = 1.0;
         double startTime = 0.0;
         double endTime = 10.0;

@@ -1,6 +1,10 @@
+package ui;
+
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import model.CourseProfile;
+
 import java.util.List;
 
 public class CourseRenderer {
@@ -28,20 +32,27 @@ public class CourseRenderer {
         this.course = course;
         this.canvas = new Canvas(canvasWidth, canvasHeight);
         this.gc = canvas.getGraphicsContext2D();
-        this.scaleX = canvasWidth  / course.getCourseWidth();
+        this.scaleX = canvasWidth / course.getCourseWidth();
         this.scaleY = canvasHeight / course.getCourseHeight();
     }
 
-    public Canvas getCanvas() { return canvas; }
+    public Canvas getCanvas() {
+        return canvas;
+    }
 
     // converts meter to pixels (course uses meter, canvas uses pixels)
-    private double toPixelX(double x) { return x * scaleX; }
-    private double toPixelY(double y) { return canvas.getHeight() - y * scaleY; } // flip y axis
+    private double toPixelX(double x) {
+        return x * scaleX;
+    }
+
+    private double toPixelY(double y) {
+        return canvas.getHeight() - y * scaleY;
+    } // flip y axis
 
     public void drawCourse() {
         double w = course.getCourseWidth();
         double h = course.getCourseHeight();
-        double cellW = canvas.getWidth()  / gridResolution;
+        double cellW = canvas.getWidth() / gridResolution;
         double cellH = canvas.getHeight() / gridResolution;
 
         // look at the heights across the whole course first so we know the full range for color scaling
@@ -51,30 +62,33 @@ public class CourseRenderer {
         for (int i = 0; i < gridResolution; i++) {
             for (int j = 0; j < gridResolution; j++) {
                 double height = course.getHeight(
-                    i * w / gridResolution,
-                    j * h / gridResolution
-                );
+                        i * w / gridResolution,
+                        j * h / gridResolution);
                 heights[i][j] = height;
-                if (height < minH) minH = height;
-                if (height > maxH) maxH = height;
+                if (height < minH)
+                    minH = height;
+                if (height > maxH)
+                    maxH = height;
             }
         }
 
-        // draw each cell with a color based on its height relative to the course's min/max
+        // draw each cell with a color based on its height relative to the course's
+        // min/max
         for (int i = 0; i < gridResolution; i++) {
             for (int j = 0; j < gridResolution; j++) {
                 gc.setFill(heightToColor(heights[i][j], minH, maxH));
-                gc.fillRect(i * cellW, canvas.getHeight() - (j+1) * cellH, cellW, cellH);
+                gc.fillRect(i * cellW, canvas.getHeight() - (j + 1) * cellH, cellW, cellH);
             }
         }
 
-    drawTarget();
-    drawStartPosition();
+        drawTarget();
+        drawStartPosition();
     }
 
     // if the height is negative its water
     private Color heightToColor(double height, double minH, double maxH) {
-        if (height < 0) return course.getWaterColor();
+        if (height < 0)
+            return course.getWaterColor();
 
         double t = (maxH == minH) ? 0.5 : (height - minH) / (maxH - minH);
 
@@ -127,8 +141,10 @@ public class CourseRenderer {
         gc.fillOval(toPixelX(s[0]) - 5, toPixelY(s[1]) - 5, 10, 10);
     }
 
-    // for some messages (so they can't be missed, like when the ball falls in the water or when the ball reaches the target)
-    // they go away after some amount of seconds (chosen in simulation controller) automatically but also when you click somewhere on the screen
+    // for some messages (so they can't be missed, like when the ball falls in the
+    // water or when the ball reaches the target)
+    // they go away after some amount of seconds (chosen in simulation controller)
+    // automatically but also when you click somewhere on the screen
     public void drawInfoMessage(String line1, String line2, Color color, Runnable onDone) {
         MessageOnScreen = true;
         afterMessageDismissed = onDone;

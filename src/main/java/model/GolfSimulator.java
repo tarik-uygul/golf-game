@@ -3,6 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.CourseInputModuleStorage;
 import physics.EulerSolver;
 import physics.GolfPhysicsFunction;
 import physics.ODEFunction;
@@ -13,14 +14,14 @@ public class GolfSimulator {
     // which solver to use — "euler" or "rk4"
     private final String solverType;
     private final ODEFunction physicsFunc;
-    private final CourseProfile course;
+    private final CourseInputModuleStorage course;
     private final double dt;
     private final double maxTime;
 
-    public GolfSimulator(CourseProfile course, String solverType, double dt, double maxTime) {
-        this.course = course;
+    public GolfSimulator(CourseInputModuleStorage course2, String solverType, double dt, double maxTime) {
+        this.course = course2;
         this.solverType = solverType;
-        this.physicsFunc = new GolfPhysicsFunction(course);
+        this.physicsFunc = new GolfPhysicsFunction(course2);
         this.dt = dt;
         this.maxTime = maxTime;
     }

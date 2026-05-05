@@ -2,11 +2,9 @@ package bots;
 
 import java.util.Random;
 
-import bots.GolfBot;
-import model.CourseProfile;
+import io.CourseInputModuleStorage;
 import model.GolfSimulator;
 import model.ShotResult;
-import model.ShotResult.Outcome;
 
 public class Hill_Climbing_Bot implements GolfBot {
     /*
@@ -28,7 +26,7 @@ public class Hill_Climbing_Bot implements GolfBot {
     }
 
     @Override
-    public double[] computeShot(double[] currentPosition, CourseProfile course) {
+    public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
         GolfSimulator simulator = new GolfSimulator(course, solverType, dt, maxTime);
 
         double[] target = course.getTargetPosition();
@@ -78,7 +76,7 @@ public class Hill_Climbing_Bot implements GolfBot {
         return new double[] { vx, vy };
     }
 
-    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseProfile course, double vx,
+    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course, double vx,
             double vy) {
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });

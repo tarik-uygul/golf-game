@@ -4,13 +4,13 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import io.CourseInputModuleStorage;
 
 public class ControlPanel {
 
     private final VBox panel;
     private final ComboBox<String> solverPicker;
     private final ComboBox<String> botPicker;
-    private final Button shootButton;
     private final Button resetButton;
     private final Label statusLabel;
     private final Label shotCountLabel;
@@ -23,31 +23,10 @@ public class ControlPanel {
     private TextField muKField;
     private TextField muSField;
 
-    public ControlPanel(CourseProfile course) {
-        vxField = new TextField("0.0");
-        vyField = new TextField("0.0");
-        // to make sure the interface of the game doesn't move because the textfields
-        // become bigger/smaller
-        vxField.setPrefWidth(150);
-        vxField.setMinWidth(150);
-        vxField.setMaxWidth(150);
-        vyField.setPrefWidth(150);
-        vyField.setMinWidth(150);
-        vyField.setMaxWidth(150);
-
-        // use this to hardcode the textfield (when course input didnt give starting
-        // position)
-        // also change public ControlPanel(CourseProfile course) to public
-        // ControlPanel()
-        // and ControlPanel controls = new ControlPanel(course); to ControlPanel
-        // controls = new ControlPanel(); (in GolfApp.java)
-        // startXField = new TextField("7.0"); // starting position when user didn't
-        // input an x value (yet)
-        // startYField = new TextField("8.0"); // starting position when user didn't
-        // input a y value (yet)
+    public ControlPanel(CourseInputModuleStorage course) {
         double[] start = course.getStartPosition();
-        startXField = new TextField(String.valueOf(start[0])); // default starting position if in the courseprofile
-        startYField = new TextField(String.valueOf(start[1])); // default starting position if in the courseprofile
+        startXField = new TextField(String.valueOf(start[0])); // default starting position
+        startYField = new TextField(String.valueOf(start[1])); // default starting position
         startXField.setMaxWidth(150);
         startYField.setMaxWidth(150);
 
@@ -61,8 +40,6 @@ public class ControlPanel {
         botPicker.setValue("Newton Raphson");
         botPicker.setMaxWidth(150);
 
-        shootButton = new Button("Shoot");
-        resetButton = new Button("Reset");
         resetButton = new Button("Reset");
         botButton = new Button("Bot shot");
         resetButton.setMaxWidth(Double.MAX_VALUE);
@@ -82,15 +59,16 @@ public class ControlPanel {
         positionLabel.setMaxWidth(150);
 
         // initialize the textfields for the position of the target
-        targetXField = new TextField("14.0");
-        targetYField = new TextField("1.0");
+        double[] target = course.getTargetPosition();
+        targetXField = new TextField(String.valueOf(target[0]));
+        targetYField = new TextField(String.valueOf(target[1]));
         targetXField.setMinWidth(150);
         targetXField.setMaxWidth(150);
         targetYField.setMaxWidth(150);
 
         // initialize the textfields for the friction
-        muKField = new TextField("0.08");
-        muSField = new TextField("0.2");
+        muKField = new TextField(String.valueOf(course.getMuK()));
+        muSField = new TextField(String.valueOf(course.getMuS()));
         muKField.setMaxWidth(130);
         muSField.setMaxWidth(130);
 
@@ -98,8 +76,10 @@ public class ControlPanel {
         panel = new VBox(10,
             new Label("Solver:"), solverPicker,
             new Separator(),
-            resetButton,
+            new Label("Bot button:"), botPicker,
             botButton,
+            new Separator(),
+            resetButton,
             new Separator(),
             new Label("Start Position:"),
             new HBox(5, new Label("x"), startXField),
@@ -126,24 +106,6 @@ public class ControlPanel {
 
     public String getSelectedSolver() {
         return solverPicker.getValue();
-    }
-
-    public void setOnShoot(Consumer<double[]> handler) {
-        shootButton.setOnAction(e -> {
-            try {
-                double vx = Double.parseDouble(vxField.getText());
-                double vy = Double.parseDouble(vyField.getText());
-                double speed = Math.sqrt(vx * vx + vy * vy);
-                double maxSpeed = 5.0;
-                if (speed > maxSpeed) {
-                    vx = vx / speed * maxSpeed;
-                    vy = vy / speed * maxSpeed;
-                }
-                handler.accept(new double[] { vx, vy });
-            } catch (NumberFormatException ex) {
-                setStatus("Invalid input", Color.RED);
-            }
-        });
     }
 
     public void setOnReset(Runnable handler) {

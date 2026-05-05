@@ -1,4 +1,8 @@
+package io;
+
 import java.util.Map;
+import physics.ExpressionParser;
+import model.HeightFunction;
 
 /**
  * Usage for now, might look slightly different for a functional gui interface:
@@ -58,7 +62,9 @@ public class CourseInputModule {
                     "Invalid height expression: " + e.getMessage());
         }
 
-        return new CourseInputModuleStorage(new HeightFunction(cleanExpr),
+        HeightFunction heightFunction = new HeightFunction(cleanExpr);
+
+        return new CourseInputModuleStorage(heightFunction,
                 muK, muS, startX, startY, targetX, targetY,
                 radius, stepSize);
     }

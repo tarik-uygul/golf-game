@@ -3,15 +3,15 @@ package ui;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import model.CourseProfile;
-
 import java.util.List;
+
+import io.CourseInputModuleStorage;
 
 public class CourseRenderer {
 
     private final Canvas canvas;
     private final GraphicsContext gc; // for drawing stuff
-    private CourseProfile course;
+    private CourseInputModuleStorage course;
 
     private final double scaleX;
     private final double scaleY;
@@ -28,7 +28,7 @@ public class CourseRenderer {
     // resolution of the terrain (more is nicer but slower)
     private static final int gridResolution = 100;
 
-    public CourseRenderer(CourseProfile course, double canvasWidth, double canvasHeight) {
+    public CourseRenderer(CourseInputModuleStorage course, double canvasWidth, double canvasHeight) {
         this.course = course;
         this.canvas = new Canvas(canvasWidth, canvasHeight);
         this.gc = canvas.getGraphicsContext2D();
@@ -266,8 +266,8 @@ public class CourseRenderer {
     public double toPixelXPublic(double x) { return toPixelX(x); }
     public double toPixelYPublic(double y) { return toPixelY(y); }
 
-    public void updateCourse(CourseProfile course) {
-        this.course = course;
+    public void updateCourse(CourseInputModuleStorage course2) {
+        this.course = course2;
     }
 
     public void clearPaths() {

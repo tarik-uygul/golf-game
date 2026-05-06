@@ -18,10 +18,10 @@ public class GolfSimulator {
     private final double dt;
     private final double maxTime;
 
-    public GolfSimulator(CourseInputModuleStorage course2, String solverType, double dt, double maxTime) {
-        this.course = course2;
+    public GolfSimulator(CourseInputModuleStorage course, String solverType, double dt, double maxTime) {
+        this.course = course;
         this.solverType = solverType;
-        this.physicsFunc = new GolfPhysicsFunction(course2);
+        this.physicsFunc = new GolfPhysicsFunction(course);
         this.dt = dt;
         this.maxTime = maxTime;
     }
@@ -43,14 +43,9 @@ public class GolfSimulator {
             path.add(state.clone());
             time += dt;
 
-            // check if the ball goed in the water (negative height)
+            // check water (negative height)
             if (course.getHeight(state[0], state[1]) < 0) {
                 return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
-            }
-
-            // check if the ball goes out of bounds/leaves the course
-            if (isOutOfBounds(state)) {
-                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
             }
 
             // check target reached
@@ -90,10 +85,5 @@ public class GolfSimulator {
         double dhdy = course.getSlopeY(state[0], state[1]);
         double slopeNorm = Math.sqrt(dhdx * dhdx + dhdy * dhdy);
         return slopeNorm <= course.getStaticFriction();
-    }
-
-    private boolean isOutOfBounds(double[] state) {
-        return state[0] < 0 || state[0] > course.getCourseWidth() || 
-               state[1] < 0 || state[1] > course.getCourseHeight();
     }
 }

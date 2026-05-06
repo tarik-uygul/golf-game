@@ -1,6 +1,9 @@
 package bots;
 
+import bots.GolfBot;
+import io.CourseInputModule;
 import io.CourseInputModuleStorage;
+import model.CourseProfile;
 import model.GolfSimulator;
 import model.ShotResult;
 

@@ -83,7 +83,7 @@ public class Hill_Climbing_Bot implements GolfBot {
         return new double[] { vx, vy };
     }
 
-    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseProfile course, double vx,
+    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course, double vx,
             double vy) { // we get the scores for shots from this func, the lower the score the better.
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });

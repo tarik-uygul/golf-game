@@ -33,9 +33,14 @@ public class Hill_Climbing_Bot implements GolfBot {
         double dx = target[0] - currentPosition[0];
         double dy = target[1] - currentPosition[1];
         double baseAngle = Math.atan2(dy, dx);
+        // this is the angle from the ball to the target, this is where the search will
+        // begin
+        // atan2 is calculated with arctan formula, it is angle of the line connecting
+        // the ball and the target.
 
-        double currentSpeed = 3.0;
-        double vx = currentSpeed * Math.cos(baseAngle);
+        double currentSpeed = 5.0; // max speed from the manual, we will start with a power shot and adjust from
+                                   // there
+        double vx = currentSpeed * Math.cos(baseAngle); //
         double vy = currentSpeed * Math.sin(baseAngle);
 
         double bestScore = evaluateShot(simulator, currentPosition, course, vx, vy);
@@ -47,7 +52,8 @@ public class Hill_Climbing_Bot implements GolfBot {
         while (stepSize > minStepSize && iterations < maxIterations) {
             boolean improved = false;
 
-            double[][] neighbors = {
+            double[][] neighbors = { // we are checking the 4 neighbors, we'll take the shot with the best score ,
+                                     // repeat until we can't find a better shot
                     { vx + stepSize, vy },
                     { vx - stepSize, vy },
                     { vx, vy + stepSize },
@@ -67,7 +73,8 @@ public class Hill_Climbing_Bot implements GolfBot {
                 }
             }
 
-            if (!improved) {
+            if (!improved) { // if we cannot find a better shot, well reduce the step size by half and search
+                             // more in detail
                 stepSize *= 0.5;
             }
             iterations++;
@@ -76,8 +83,8 @@ public class Hill_Climbing_Bot implements GolfBot {
         return new double[] { vx, vy };
     }
 
-    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course, double vx,
-            double vy) {
+    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseProfile course, double vx,
+            double vy) { // we get the scores for shots from this func, the lower the score the better.
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
 

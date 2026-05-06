@@ -1,6 +1,6 @@
 package bots;
 
-import model.CourseProfile;
+import io.CourseInputModuleStorage;
 import model.GolfSimulator;
 import model.ShotResult;
 import model.ShotResult.Outcome;
@@ -22,7 +22,7 @@ public class RuleBasedBot implements GolfBot {
     // this method returns chosen shot as a 2d velocity vector [vx,vy]
     // basically it returns the shot the bot wants to play
     @Override
-    public double[] computeShot(double[] currentPosition, CourseProfile course) {
+    public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
 
         GolfSimulator simulator = new GolfSimulator(course, "rk4", dt, maxTime);
 
@@ -39,8 +39,8 @@ public class RuleBasedBot implements GolfBot {
         double[] bestShot = new double[] { 0, 0 };
 
         // try different angles around the target direction
-        int angleSteps = 25; // 25 different directions
-        int speedSteps = 15;// bot tries 15 different speeds
+        int angleSteps = 15; // 25 different directions
+        int speedSteps = 10;// bot tries 15 different speeds
 
         // it searches within a 90-degree range to the target
         double angleSpread = Math.PI / 2; // +- 90 degrees
@@ -78,7 +78,7 @@ public class RuleBasedBot implements GolfBot {
         return bestShot;
     }
 
-    private double score(ShotResult result, CourseProfile course) {
+    private double score(ShotResult result, CourseInputModuleStorage course) {
 
         double[] target = course.getTargetPosition();
 

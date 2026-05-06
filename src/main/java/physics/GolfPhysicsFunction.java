@@ -1,16 +1,16 @@
 package physics;
 
-import model.CourseProfile;
+import io.CourseInputModuleStorage;
 
 // implements the equations of motion from Appendix B of the manual
 // state vector is [x, y, vx, vy]
 public class GolfPhysicsFunction implements ODEFunction {
 
     private static final double G = 9.81;
-    private final CourseProfile course;
+    private final CourseInputModuleStorage course;
 
-    public GolfPhysicsFunction(CourseProfile course) {
-        this.course = course;
+    public GolfPhysicsFunction(CourseInputModuleStorage course2) {
+        this.course = course2;
     }
 
     @Override

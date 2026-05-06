@@ -3,6 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.CourseInputModuleStorage;
 import physics.EulerSolver;
 import physics.GolfPhysicsFunction;
 import physics.ODEFunction;
@@ -13,14 +14,14 @@ public class GolfSimulator {
     // which solver to use — "euler" or "rk4"
     private final String solverType;
     private final ODEFunction physicsFunc;
-    private final CourseProfile course;
+    private final CourseInputModuleStorage course;
     private final double dt;
     private final double maxTime;
 
-    public GolfSimulator(CourseProfile course, String solverType, double dt, double maxTime) {
-        this.course = course;
+    public GolfSimulator(CourseInputModuleStorage course2, String solverType, double dt, double maxTime) {
+        this.course = course2;
         this.solverType = solverType;
-        this.physicsFunc = new GolfPhysicsFunction(course);
+        this.physicsFunc = new GolfPhysicsFunction(course2);
         this.dt = dt;
         this.maxTime = maxTime;
     }
@@ -42,9 +43,14 @@ public class GolfSimulator {
             path.add(state.clone());
             time += dt;
 
-            // check water (negative height)
+            // check if the ball goed in the water (negative height)
             if (course.getHeight(state[0], state[1]) < 0) {
                 return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
+            }
+
+            // check if the ball goes out of bounds/leaves the course
+            if (isOutOfBounds(state)) {
+                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
             }
 
             // check target reached
@@ -84,5 +90,10 @@ public class GolfSimulator {
         double dhdy = course.getSlopeY(state[0], state[1]);
         double slopeNorm = Math.sqrt(dhdx * dhdx + dhdy * dhdy);
         return slopeNorm <= course.getStaticFriction();
+    }
+
+    private boolean isOutOfBounds(double[] state) {
+        return state[0] < 0 || state[0] > course.getCourseWidth() || 
+               state[1] < 0 || state[1] > course.getCourseHeight();
     }
 }

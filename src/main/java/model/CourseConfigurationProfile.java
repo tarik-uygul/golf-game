@@ -1,7 +1,5 @@
 package model;
 
-import javafx.scene.paint.Color;
-
 public class CourseConfigurationProfile implements CourseProfile {
     private final CourseConfiguration config;
 

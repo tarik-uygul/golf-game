@@ -3,23 +3,32 @@ package ui;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import model.CourseProfile;
-
 import java.util.List;
+
+import io.CourseInputModuleStorage;
 
 public class CourseRenderer {
 
     private final Canvas canvas;
     private final GraphicsContext gc; // for drawing stuff
-    private final CourseProfile course;
+    private CourseInputModuleStorage course;
 
     private final double scaleX;
     private final double scaleY;
 
+    private javafx.animation.AnimationTimer ballAnimation;
+    private int animationStep = 0;
+    private List<double[]> animationPath;
+
+    private boolean MessageOnScreen = false;
+    private Runnable afterMessageDismissed = null;
+
+    private double[] currentBallPosition = null;
+
     // resolution of the terrain (more is nicer but slower)
     private static final int gridResolution = 100;
 
-    public CourseRenderer(CourseProfile course, double canvasWidth, double canvasHeight) {
+    public CourseRenderer(CourseInputModuleStorage course, double canvasWidth, double canvasHeight) {
         this.course = course;
         this.canvas = new Canvas(canvasWidth, canvasHeight);
         this.gc = canvas.getGraphicsContext2D();
@@ -46,9 +55,9 @@ public class CourseRenderer {
         double cellW = canvas.getWidth() / gridResolution;
         double cellH = canvas.getHeight() / gridResolution;
 
-        // look at the heights across the whole course first so we know the full range
-        // for color scaling
-        double minH = Double.MAX_VALUE, maxH = -Double.MAX_VALUE;
+        // look at the heights across the whole course first so we know the full range for color scaling
+        double minH = Double.MAX_VALUE;
+        double maxH = -Double.MAX_VALUE;
         double[][] heights = new double[gridResolution][gridResolution];
         for (int i = 0; i < gridResolution; i++) {
             for (int j = 0; j < gridResolution; j++) {
@@ -82,6 +91,7 @@ public class CourseRenderer {
             return course.getWaterColor();
 
         double t = (maxH == minH) ? 0.5 : (height - minH) / (maxH - minH);
+
         return course.getHighColor().interpolate(course.getGrassColor(), t);
     }
 
@@ -89,39 +99,45 @@ public class CourseRenderer {
         gc.setFill(Color.WHITE);
         gc.setStroke(Color.BLACK);
         gc.fillOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12);
-        gc.strokeOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12);
+        // gc.strokeOval(toPixelX(x) - 6, toPixelY(y) - 6, 12, 12); //add this for border around ball
     }
 
-    public void drawBallPath(List<double[]> path) {
-        gc.setStroke(Color.WHITE);
-        gc.setLineWidth(1.5);
-        for (int i = 1; i < path.size(); i++) {
-            double[] prev = path.get(i - 1);
-            double[] curr = path.get(i);
-            gc.strokeLine(toPixelX(prev[0]), toPixelY(prev[1]),
-                    toPixelX(curr[0]), toPixelY(curr[1]));
-        }
-        // draw final ball position
-        double[] last = path.get(path.size() - 1);
-        drawBall(last[0], last[1]);
-    }
+        private void drawTarget() {
+        double[] t  = course.getTargetPosition();
+        double pixX = toPixelX(t[0]);
+        double pixY = toPixelY(t[1]);
 
-    private void drawTarget() {
-        double[] t = course.getTargetPosition();
-        double r = course.getTargetRadius();
-        double pixR = Math.max(r * scaleX, 6); // at least 6px so it's always visible
+        // hole/target
+        double holeRadius = Math.max(course.getTargetRadius() * scaleX, 6);
+        gc.setFill(Color.BLACK);
+        gc.fillOval(pixX - holeRadius, pixY - holeRadius, holeRadius * 2, holeRadius * 2);
 
+        // pole
+        double poleHeight = 30;  // amount of pixels tall
+        double poleWidth  = 2;
+        gc.setFill(Color.WHITE);
+        gc.fillRect(pixX - poleWidth / 2, pixY - poleHeight, poleWidth, poleHeight);
+
+        // flag
+        double flagWidth  = 16;
+        double flagHeight = 12;
         gc.setFill(Color.RED);
-        gc.fillOval(
-                toPixelX(t[0]) - pixR,
-                toPixelY(t[1]) - pixR,
-                pixR * 2,
-                pixR * 2);
+        gc.fillPolygon(
+            new double[]{pixX, pixX + flagWidth, pixX},               // x points
+            new double[]{pixY - poleHeight, pixY - poleHeight + flagHeight / 2, pixY - poleHeight + flagHeight}, // y points
+            3
+        );
+    }
+
+    public void setCurrentBallPosition(double[] position) {
+        this.currentBallPosition = position;
     }
 
     private void drawStartPosition() {
-        double[] s = course.getStartPosition();
-        gc.setFill(Color.YELLOW);
+        double[] s = (currentBallPosition != null)
+        ? currentBallPosition
+        : course.getStartPosition();
+        gc.setFill(Color.WHITE);
         gc.fillOval(toPixelX(s[0]) - 5, toPixelY(s[1]) - 5, 10, 10);
     }
 
@@ -130,6 +146,9 @@ public class CourseRenderer {
     // they go away after some amount of seconds (chosen in simulation controller)
     // automatically but also when you click somewhere on the screen
     public void drawInfoMessage(String line1, String line2, Color color, Runnable onDone) {
+        MessageOnScreen = true;
+        afterMessageDismissed = onDone;
+
         double w = canvas.getWidth();
         double h = canvas.getHeight();
 
@@ -149,15 +168,106 @@ public class CourseRenderer {
         gc.fillText(line2, w / 2, h / 2 + 30);
         gc.fillText("\n(click to continue)", w / 2, h / 2 + 70);
         gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
+    }
 
-        // message disappears when clicking on the interface
-        canvas.setOnMouseClicked(event -> {
-            clearPaths();
-            canvas.setOnMouseClicked(null); // unregister the click so future clicks dont accidentally "skip" the next
-                                            // message
-            if (onDone != null)
-                onDone.run();
-        });
+    public void drawArrow(double fromX, double fromY, double toX, double toY, double dragLength, double maxDragPixels) {
+        clearPaths();
+
+            // t stores a value between 0 and 1 that resembles the power
+            double t = Math.min(dragLength / maxDragPixels, 1.0);
+
+            // changes the colour of the arrow to match the power
+            // yellow (low power), orange (medium power), red (high power)
+            Color arrowColor;
+            if (t < 0.75) {
+                // yellow to orange
+                arrowColor = Color.YELLOW.interpolate(Color.ORANGE, t/0.75 );
+            } else {
+                // orange to red
+                arrowColor = Color.ORANGE.interpolate(Color.RED, (t - 0.75) / 0.25);
+            }
+
+        gc.setStroke(arrowColor);
+        gc.setFill(arrowColor);
+        gc.setLineWidth(2.5);
+        gc.strokeLine(fromX, fromY, toX, toY);
+
+        // create the pointer of the arrow
+        double angle = Math.atan2(toY - fromY, toX - fromX);
+        double arrowSize = 12;
+        gc.setFill(arrowColor);
+        double x1 = toX - arrowSize * Math.cos(angle - Math.PI / 6);
+        double y1 = toY - arrowSize * Math.sin(angle - Math.PI / 6);
+        double x2 = toX - arrowSize * Math.cos(angle + Math.PI / 6);
+        double y2 = toY - arrowSize * Math.sin(angle + Math.PI / 6);
+        gc.fillPolygon(new double[]{toX, x1, x2}, new double[]{toY, y1, y2}, 3);
+    }
+
+    public void animateBall(List<double[]> path, Runnable onFinished) {
+        if (ballAnimation != null) ballAnimation.stop();
+
+        animationPath = path;
+        animationStep = 0;
+
+        int totalSteps = path.size();
+        int stepsPerFrame = Math.max(1, totalSteps / 1000);
+
+        ballAnimation = new javafx.animation.AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (animationStep >= animationPath.size()) {
+                    stop();
+                    if (onFinished != null) onFinished.run();
+                    return;
+                }
+
+                double[] pos = animationPath.get(animationStep);
+
+                // stop early if ball has essentially stopped moving
+                // instead of waiting for all remaining steps to play out
+                if (animationStep > 0) {
+                    double[] prev = animationPath.get(animationStep - stepsPerFrame < 0
+                        ? 0 : animationStep - stepsPerFrame);
+                    double dx = pos[0] - prev[0];
+                    double dy = pos[1] - prev[1];
+                    double distanceMoved = Math.sqrt(dx*dx + dy*dy);
+                    if (distanceMoved < 0.001) { // less than 1mm per frame = effectively stopped
+                        stop();
+                        drawCourse();
+                        drawBall(pos[0], pos[1]);
+                        if (onFinished != null) onFinished.run();
+                        return;
+                    }
+                }
+
+                drawCourse();
+                drawBall(pos[0], pos[1]);
+                animationStep += stepsPerFrame;
+            }
+        };
+        ballAnimation.start();
+    }
+
+    public boolean isMessageOnScreen() { return MessageOnScreen; }
+
+    public void dismissMessage() {
+        MessageOnScreen = false;
+        clearPaths();
+        Runnable callback = afterMessageDismissed; // callback stores the code to run when the message is dismissed
+        afterMessageDismissed = null;
+        if (callback != null) callback.run();
+    }
+
+    // this converts pixel coordinates back to course coordinates
+    public double toWorldX(double pixelX) { return pixelX / scaleX; }
+    public double toWorldY(double pixelY) { return (canvas.getHeight() - pixelY) / scaleY; }
+
+    // this converts course coordinates to pixel coordinates
+    public double toPixelXPublic(double x) { return toPixelX(x); }
+    public double toPixelYPublic(double y) { return toPixelY(y); }
+
+    public void updateCourse(CourseInputModuleStorage course2) {
+        this.course = course2;
     }
 
     public void clearPaths() {

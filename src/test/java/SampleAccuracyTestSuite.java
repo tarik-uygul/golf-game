@@ -1,4 +1,3 @@
-package src.test;
 // SampleAccuracyTestSuite.java
 
 //

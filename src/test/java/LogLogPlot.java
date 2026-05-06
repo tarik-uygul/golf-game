@@ -1,4 +1,3 @@
-package src.test;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;

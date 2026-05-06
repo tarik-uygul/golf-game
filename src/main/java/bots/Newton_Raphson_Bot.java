@@ -91,13 +91,14 @@ public class Newton_Raphson_Bot implements GolfBot {
             // the landing position (x,y).
             // We change (tweak) vx and vy by a small epsilon and see how the landing
             // position changes to estimate the derivatives.
-            double[] tweakVxLanding = simulateForPosition(simulator, currentPosition, vx + epsilon, vy); // tweak vx by
-                                                                                                         // a small
-                                                                                                         // amount
-                                                                                                         // (epsilon)
-                                                                                                         // and see
-                                                                                                         // where we
-                                                                                                         // land
+            double[] tweakVxLanding = simulateForPosition(simulator, currentPosition, vx + epsilon, vy);
+            // tweak vx by
+            // a small
+            // amount
+            // (epsilon)
+            // and see
+            // where we
+            // land
             double dX_dVx = (tweakVxLanding[0] - currentLanding[0]) / epsilon; // how much the x landing position
                                                                                // changes when we tweak velocity in x
                                                                                // direction

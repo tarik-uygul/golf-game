@@ -39,8 +39,8 @@ public class RuleBasedBot implements GolfBot {
         double[] bestShot = new double[] { 0, 0 };
 
         // try different angles around the target direction
-        int angleSteps = 25; // 25 different directions
-        int speedSteps = 15;// bot tries 15 different speeds
+        int angleSteps = 15; // 25 different directions
+        int speedSteps = 10;// bot tries 15 different speeds
 
         // it searches within a 90-degree range to the target
         double angleSpread = Math.PI / 2; // +- 90 degrees

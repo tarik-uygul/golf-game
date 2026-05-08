@@ -29,10 +29,8 @@ public class Newton_Raphson_Bot implements GolfBot {
 
         double dx = target[0] - currentPosition[0];
         double dy = target[1] - currentPosition[1];
-        double angle = Math.atan2(dy, dx); // this is the angle from the ball to the target, this is where the search
-                                           // will begin
-        // atan2 is calculated with arctan formula (arctan(dy/dx)), it is angle of the
-        // line connecting the ball and the target.
+        // atan2 gives the angle from ball to target (starting point for search)
+        double angle = Math.atan2(dy, dx);
 
         // take initial power as 2.0, it doesn't matter much since we'll do a quick grid
         // search to find a better start point
@@ -45,18 +43,12 @@ public class Newton_Raphson_Bot implements GolfBot {
             double testVy = testPower * Math.sin(angle);
 
             double[] testLanding = simulateForPosition(simulator, currentPosition, testVx, testVy);
-            double dist = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2)); // squared
-                                                                                                                        // distance
+            double dist = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2)); // distance
                                                                                                                         // from
-                                                                                                                        // the
-                                                                                                                        // landing
-                                                                                                                        // spot
-                                                                                                                        // to
-                                                                                                                        // the
                                                                                                                         // hole
 
             if (dist < bestInitialDistance) {
-                bestInitialDistance = dist; // distance from the first shot to the hole, we want to minimize this
+                bestInitialDistance = dist; // minimize distance from first shot to hole
                 bestInitialPower = testPower;
             }
         }
@@ -65,9 +57,8 @@ public class Newton_Raphson_Bot implements GolfBot {
         double vx = bestInitialPower * Math.cos(angle);
         double vy = bestInitialPower * Math.sin(angle);
 
-        // to calculate derivatives, we need a small h value from the limit def of
-        // derivative.
-        // remember f'(x) =lim h -> 0 (f(x+h) - f(x))/h.
+        // to calculate derivatives, we need a small h value (limit definition: f'(x) =
+        // lim h->0 (f(x+h) - f(x))/h)
         double epsilon = 0.01; // our small h
         int maxIterations = 50; // to prevent infinite loop.
         double damping = 0.8;
@@ -79,48 +70,30 @@ public class Newton_Raphson_Bot implements GolfBot {
             double errorX = currentLanding[0] - target[0];
             double errorY = currentLanding[1] - target[1];
 
-            double distanceToHole = Math.sqrt(errorX * errorX + errorY * errorY); // Euclidean distance from the landing
-                                                                                  // spot to the hole
+            double distanceToHole = Math.sqrt(errorX * errorX + errorY * errorY); // Euclidean distance to hole
 
             // If we are within the target radius, we found our shot
             if (distanceToHole <= course.getTargetRadius()) {
                 return new double[] { vx, vy };
             }
 
-            // Jacobian Approximation: We need to know how changing the vx,vy will affect
-            // the landing position (x,y).
-            // We change (tweak) vx and vy by a small epsilon and see how the landing
-            // position changes to estimate the derivatives.
-            double[] tweakVxLanding = simulateForPosition(simulator, currentPosition, vx + epsilon, vy);
-            // tweak vx by
-            // a small
-            // amount
-            // (epsilon)
-            // and see
-            // where we
-            // land
-            double dX_dVx = (tweakVxLanding[0] - currentLanding[0]) / epsilon; // how much the x landing position
-                                                                               // changes when we tweak velocity in x
-                                                                               // direction
-            double dY_dVx = (tweakVxLanding[1] - currentLanding[1]) / epsilon; // how much the y landing position
-                                                                               // changes when we tweak velocity in x
-                                                                               // direction
+            // Jacobian Approximation: estimate how changing vx,vy affects landing position
+            // by tweaking by epsilon
+            double[] tweakVxLanding = simulateForPosition(simulator, currentPosition, vx + epsilon, vy); // tweak vx by
+                                                                                                         // epsilon
+            double dX_dVx = (tweakVxLanding[0] - currentLanding[0]) / epsilon; // change in x landing per unit change in
+                                                                               // vx
+            double dY_dVx = (tweakVxLanding[1] - currentLanding[1]) / epsilon; // change in y landing per unit change in
+                                                                               // vx
 
             double[] tweakVyLanding = simulateForPosition(simulator, currentPosition, vx, vy + epsilon); // same for vy
-            double dX_dVy = (tweakVyLanding[0] - currentLanding[0]) / epsilon; // repeat for velocity in y direction
-            double dY_dVy = (tweakVyLanding[1] - currentLanding[1]) / epsilon;
+            double dX_dVy = (tweakVyLanding[0] - currentLanding[0]) / epsilon; // change in x landing per unit change in
+                                                                               // vy
+            double dY_dVy = (tweakVyLanding[1] - currentLanding[1]) / epsilon; // change in y landing per unit change in
+                                                                               // vy
 
-            // We need to calculate the inverse of the Jacobian matrix to know how to adjust
-            // vx and vy to reduce the error in x and y.
-            // Normally, for 1D Newton-Raphson we just do new_guess = old_guess -
-            // f(old_guess)/f'(old_guess).
-            // However since its 2D, we have to do a matrix operation involving the inverse
-            // of the Jacobian.
-            // Matrix equivalent for 2D Newton Raphson is: [vx,vy] = [vx,vy] -
-            // inverse(Jacobian matrix)*[errorX,errorY].
-            // The reason we take the inverse is we cannot directly divide like in 1D.
-            // determninant of the matrix. We need it to calculate the inverse. If its close
-            // to zero, it means we are stuck and need some noise to escape.
+            // 2D Newton-Raphson: [vx,vy] = [vx,vy] - inverse(Jacobian)*[errorX,errorY]
+            // Need determinant to calculate inverse; if near zero, we're stuck
             double determinant = (dX_dVx * dY_dVy) - (dX_dVy * dY_dVx);
 
             // If determinant is very close to 0, add some noise to escape the flat spot
@@ -130,25 +103,16 @@ public class Newton_Raphson_Bot implements GolfBot {
                 continue;
             }
 
-            double invJ11 = dY_dVy / determinant; // (1,1) element of the inverse Jacobian, this tells us how much we
-                                                  // should change vx to reduce the error in x, ignoring y for a moment
-            double invJ12 = -dX_dVy / determinant; // (1,2) element of the inverse Jacobian, this tells us how much we
-                                                   // should change vx to reduce the error in y, ignoring x for a moment
-            double invJ21 = -dY_dVx / determinant;// (2,1) element of the inverse Jacobian, this tells us how much we
-                                                  // should change vy to reduce the error in x, ignoring y for a moment
-            double invJ22 = dX_dVx / determinant;// (2,2) element of the inverse Jacobian, this tells us how much we
-                                                 // should change vy to reduce the error in y, ignoring x for a moment
+            double invJ11 = dY_dVy / determinant; // inverse Jacobian (1,1): how much to change vx for error in x
+            double invJ12 = -dX_dVy / determinant; // inverse Jacobian (1,2): how much to change vx for error in y
+            double invJ21 = -dY_dVx / determinant; // inverse Jacobian (2,1): how much to change vy for error in x
+            double invJ22 = dX_dVx / determinant; // inverse Jacobian (2,2): how much to change vy for error in y
 
-            double stepVx = invJ11 * errorX + invJ12 * errorY; // how much we should change vx to reduce the error in x
-                                                               // and y
-            double stepVy = invJ21 * errorX + invJ22 * errorY; // how much we should change vy to reduce the error in x
-                                                               // and y
+            double stepVx = invJ11 * errorX + invJ12 * errorY; // how much to change vx to reduce error
+            double stepVy = invJ21 * errorX + invJ22 * errorY; // how much to change vy to reduce error
 
-            // Damping or learning rate: Since the course is not flat, we might overshoot or
-            // go in the wrong direction.
-            // Damping will help us take smaller and safer steps. If we find that a step
-            // made things worse, we can reduce the damping to take an even smaller step
-            // next time.
+            // Damping: take smaller, safer steps. If a step made things worse, reduce
+            // damping
             double oldVx = vx;
             double oldVy = vy;
             double oldDistance = distanceToHole;
@@ -163,16 +127,12 @@ public class Newton_Raphson_Bot implements GolfBot {
                     .sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
 
             if (newDistance > oldDistance) {
-                // Oops. Our math pushed us in a worse direction.
-                // Go back to the old velocity and cut damping in half for a smaller, safer step
-                // next time.
+                // Step made things worse; revert and reduce damping for a smaller next step
                 vx = oldVx;
                 vy = oldVy;
                 damping *= 0.5;
             } else {
-                // It worked! We can slightly increase damping back toward 0.8 for faster
-                // learning
-
+                // Step was successful; increase damping back toward 0.8 for faster learning
                 damping = Math.min(0.8, damping * 1.1);
             }
 

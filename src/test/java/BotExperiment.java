@@ -14,7 +14,7 @@ public class BotExperiment {
     public static void main(String[] args) {
         System.out.println("Starting Bot Performance Experiment...\n");
 
-        // 1. Setup the Simulation Parameters
+        // Simulation Parameters
         double dt = 0.01;
         double maxTime = 15.0;
         String solverType = "rk4";
@@ -24,7 +24,7 @@ public class BotExperiment {
         CourseInputModuleStorage testCourse = createTestCourse();
         double[] startPos = { 7.0, 8.0 }; // From the manual
 
-        // 2. Initialize the Bots
+        // clInitialize the Bots
         GolfBot ruleBased = new RuleBasedBot(dt, maxTime);
         GolfBot hillClimbing = new Hill_Climbing_Bot(dt, maxTime, solverType);
         GolfBot newtonRaphson = new Newton_Raphson_Bot(dt, maxTime, solverType);
@@ -33,7 +33,7 @@ public class BotExperiment {
                 "Bot Name", "Calc Time (ms)", "Final Distance (m)", "Result"));
         System.out.println("----------------------------------------------------------------------------------");
 
-        // 3. Run the Experiment for each bot
+        // Run the Experiment for each bot
         runTest("Rule-Based Bot", ruleBased, testCourse, startPos, dt, maxTime, solverType);
         runTest("Hill Climbing Bot", hillClimbing, testCourse, startPos, dt, maxTime, solverType);
         runTest("Newton-Raphson Bot", newtonRaphson, testCourse, startPos, dt, maxTime, solverType);

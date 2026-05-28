@@ -1,7 +1,6 @@
 package physics;
 
 import io.CourseInputModuleStorage;
-import model.CourseProfile;
 
 // implements the equations of motion from Appendix B of the manual
 // state vector is [x, y, vx, vy]

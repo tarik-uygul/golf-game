@@ -5,9 +5,15 @@ import bots.Hill_Climbing_Bot;
 import bots.Newton_Raphson_Bot;
 import bots.RuleBasedBot;
 import io.CourseInputModuleStorage;
+import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import model.GolfSimulator;
 import model.ShotResult;
+import model.obstacles.Obstacle;
+import model.obstacles.Sand;
+import model.obstacles.Tree;
+import model.obstacles.Water;
+import ui.ControlPanel.PlacementMode;
 
 public class SimulationController {
 
@@ -25,6 +31,11 @@ public class SimulationController {
     private static final double MAX_DRAG_PIXELS = 150.0;
     private static final double MAX_SPEED = 5.0;
 
+    // per-type default radii in world units (meters)
+    private static final double TREE_RADIUS = 0.5;
+    private static final double SAND_RADIUS = 1.5;
+    private static final double WATER_RADIUS = 2.0;
+
     public SimulationController(CourseInputModuleStorage course, CourseRenderer renderer, ControlPanel controls, double dt,
             double maxTime) {
         this.course = course;
@@ -39,6 +50,12 @@ public class SimulationController {
         positionBeforeShot = new double[]{course.startX, course.startY};
 
         controls.setOnReset(this::handleReset);
+        controls.setOnClearObstacles(() -> {
+            course.clearObstacles();
+            refreshObstacleCounts();
+            renderer.clearPaths();
+            renderer.drawBall(currentPosition[0], currentPosition[1]);
+        });
         controls.setOnBotShoot(() -> {
             String selectedBot = controls.getSelectedBot();
 
@@ -85,6 +102,38 @@ public class SimulationController {
                 renderer.dismissMessage();
                 isDragging = false;
                 return;
+            }
+            // intercept right-click → remove an obstacle under the cursor
+            if (event.getButton() == MouseButton.SECONDARY) {
+                double wx = renderer.toWorldX(event.getX());
+                double wy = renderer.toWorldY(event.getY());
+                Obstacle hit = renderer.obstacleAtWorld(wx, wy);
+                if (hit != null) {
+                    course.removeObstacle(hit);
+                    refreshObstacleCounts();
+                    renderer.clearPaths();
+                    renderer.drawBall(currentPosition[0], currentPosition[1]);
+                }
+                return;
+            }
+            // intercept left-click while a placement toggle is active → drop a new obstacle
+            PlacementMode mode = controls.getPlacementMode();
+            if (mode != PlacementMode.OFF) {
+                double wx = renderer.toWorldX(event.getX());
+                double wy = renderer.toWorldY(event.getY());
+                Obstacle created = switch (mode) {
+                    case TREE -> new Tree(wx, wy, TREE_RADIUS);
+                    case SAND -> new Sand(wx, wy, SAND_RADIUS);
+                    case WATER -> new Water(wx, wy, WATER_RADIUS);
+                    case OFF -> null;
+                };
+                if (created != null) {
+                    course.addObstacle(created);
+                    refreshObstacleCounts();
+                    renderer.clearPaths();
+                    renderer.drawBall(currentPosition[0], currentPosition[1]);
+                }
+                return; // don't start shot drag in placement mode
             }
             // start dragging when the clicking near the ball
             double ballPixelX = renderer.toPixelXPublic(currentPosition[0]);
@@ -247,5 +296,16 @@ public class SimulationController {
 
     public void setBot(GolfBot bot) {
         this.bot = bot;
+    }
+
+    // recount obstacles by type and push to the sidebar labels
+    private void refreshObstacleCounts() {
+        int trees = 0, sand = 0, water = 0;
+        for (Obstacle o : course.getObstacles()) {
+            if (o instanceof Tree) trees++;
+            else if (o instanceof Sand) sand++;
+            else if (o instanceof Water) water++;
+        }
+        controls.updateObstacleCounts(trees, sand, water);
     }
 }

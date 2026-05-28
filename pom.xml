@@ -34,7 +34,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>everything.GolfApp</mainClass>
+                    <mainClass>ui.GolfApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

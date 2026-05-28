@@ -23,6 +23,18 @@ public class ControlPanel {
     private TextField muKField;
     private TextField muSField;
 
+    // Obstacle placement controls
+    public enum PlacementMode { OFF, TREE, SAND, WATER }
+    private final ToggleGroup placementToggles = new ToggleGroup();
+    private final ToggleButton offToggle = new ToggleButton("Off");
+    private final ToggleButton treeToggle = new ToggleButton("Tree");
+    private final ToggleButton sandToggle = new ToggleButton("Sand");
+    private final ToggleButton waterToggle = new ToggleButton("Water");
+    private final Label treeCountLabel = new Label("Trees: 0");
+    private final Label sandCountLabel = new Label("Sand: 0");
+    private final Label waterCountLabel = new Label("Water: 0");
+    private final Button clearObstaclesButton = new Button("Clear all");
+
     public ControlPanel(CourseInputModuleStorage course) {
         double[] start = course.getStartPosition();
         startXField = new TextField(String.valueOf(start[0])); // default starting position
@@ -72,12 +84,32 @@ public class ControlPanel {
         muKField.setMaxWidth(130);
         muSField.setMaxWidth(130);
 
+        // wire toggles into one mutually-exclusive group; Off is the default
+        offToggle.setToggleGroup(placementToggles);
+        treeToggle.setToggleGroup(placementToggles);
+        sandToggle.setToggleGroup(placementToggles);
+        waterToggle.setToggleGroup(placementToggles);
+        offToggle.setSelected(true);
+        for (ToggleButton t : new ToggleButton[]{offToggle, treeToggle, sandToggle, waterToggle}) {
+            t.setMaxWidth(Double.MAX_VALUE);
+        }
+        // never allow all four to be unselected — clicking the active one keeps it active
+        placementToggles.selectedToggleProperty().addListener((obs, oldT, newT) -> {
+            if (newT == null && oldT != null) ((ToggleButton) oldT).setSelected(true);
+        });
+        clearObstaclesButton.setMaxWidth(Double.MAX_VALUE);
+
         // show labels and textfields
         panel = new VBox(10,
             new Label("Solver:"), solverPicker,
             new Separator(),
             new Label("Bot button:"), botPicker,
             botButton,
+            new Separator(),
+            new Label("Obstacles:"),
+            new HBox(5, offToggle, treeToggle, sandToggle, waterToggle),
+            treeCountLabel, sandCountLabel, waterCountLabel,
+            clearObstaclesButton,
             new Separator(),
             resetButton,
             new Separator(),
@@ -174,5 +206,23 @@ public class ControlPanel {
 
     public String getSelectedBot() {
         return botPicker.getValue();
+    }
+
+    // current placement mode based on which toggle is active
+    public PlacementMode getPlacementMode() {
+        if (treeToggle.isSelected()) return PlacementMode.TREE;
+        if (sandToggle.isSelected()) return PlacementMode.SAND;
+        if (waterToggle.isSelected()) return PlacementMode.WATER;
+        return PlacementMode.OFF;
+    }
+
+    public void setOnClearObstacles(Runnable handler) {
+        clearObstaclesButton.setOnAction(e -> handler.run());
+    }
+
+    public void updateObstacleCounts(int trees, int sand, int water) {
+        treeCountLabel.setText("Trees: " + trees);
+        sandCountLabel.setText("Sand: " + sand);
+        waterCountLabel.setText("Water: " + water);
     }
 }

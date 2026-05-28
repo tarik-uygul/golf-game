@@ -19,8 +19,8 @@ public class CourseInputModuleStorage {
     public double stepSize;
 
     public CourseInputModuleStorage(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
-                        double targetX, double targetY, double targetRadius,
-                        double stepSize) {
+            double targetX, double targetY, double targetRadius,
+            double stepSize) {
         this.heightFunction = heightFunction;
         this.muK = muK;
         this.muS = muS;
@@ -63,11 +63,11 @@ public class CourseInputModuleStorage {
     }
 
     public double[] getStartPosition() {
-        return new double[]{startX, startY};
+        return new double[] { startX, startY };
     }
 
     public double[] getTargetPosition() {
-        return new double[]{targetX, targetY};
+        return new double[] { targetX, targetY };
     }
 
     public double getTargetRadius() {

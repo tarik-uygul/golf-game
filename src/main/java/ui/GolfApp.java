@@ -1,6 +1,5 @@
 package ui;
 
-import io.CourseInputModule;
 import io.CourseInputModuleStorage;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -69,8 +68,6 @@ public class GolfApp extends Application {
             StackPane canvasHolder = new StackPane(canvas);
 
             ControlPanel controls = new ControlPanel(course);
-
-            SimulationController ctrl = new SimulationController(course, renderer, controls, DT, MAX_TIME);
 
             renderer.drawCourse();
 

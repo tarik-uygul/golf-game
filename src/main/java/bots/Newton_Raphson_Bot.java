@@ -1,9 +1,6 @@
 package bots;
 
-import bots.GolfBot;
-import io.CourseInputModule;
 import io.CourseInputModuleStorage;
-import model.CourseProfile;
 import model.GolfSimulator;
 import model.ShotResult;
 
@@ -116,31 +113,46 @@ public class Newton_Raphson_Bot implements GolfBot {
             double oldVx = vx;
             double oldVy = vy;
             double oldDistance = distanceToHole;
+            boolean stepAccepted = false;
 
-            // Apply the step with current damping
-            vx = oldVx - (damping * stepVx);
-            vy = oldVy - (damping * stepVy);
+            // INNER LOOP: Try smaller steps until one improves our score,
+            // WITHOUT recalculating the expensive Jacobian derivatives!
+            while (damping > 0.01 && !stepAccepted) {
 
-            // Test if this new velocity is actually better
-            double[] testLanding = simulateForPosition(simulator, currentPosition, vx, vy);
-            double newDistance = Math
-                    .sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
+                // 1. Calculate proposed step
+                vx = oldVx - (damping * stepVx);
+                vy = oldVy - (damping * stepVy);
 
-            if (newDistance > oldDistance) {
-                // Step made things worse; revert and reduce damping for a smaller next step
-                vx = oldVx;
-                vy = oldVy;
-                damping *= 0.5;
-            } else {
-                // Step was successful; increase damping back toward 0.8 for faster learning
-                damping = Math.min(0.8, damping * 1.1);
+                // 2. Clamp to maximum speed BEFORE evaluating the shot
+                double speed = Math.sqrt(vx * vx + vy * vy);
+                if (speed > 5.0) {
+                    vx = (vx / speed) * 5.0;
+                    vy = (vy / speed) * 5.0;
+                }
+
+                // 3. Test if this new clamped velocity is actually better
+                double[] testLanding = simulateForPosition(simulator, currentPosition, vx, vy);
+                double newDistance = Math
+                        .sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
+
+                if (newDistance >= oldDistance) {
+                    // Step failed. Cut damping in half and loop again to try a smaller step
+                    // immediately.
+                    damping *= 0.5;
+                } else {
+                    // Step worked! Accept it and slightly increase damping for the next full
+                    // iteration.
+                    stepAccepted = true;
+                    damping = Math.min(0.8, damping * 1.2);
+                }
             }
 
-            // maximum speed allowed by the manual (5.0 m/s)
-            double speed = Math.sqrt(vx * vx + vy * vy);
-            if (speed > 5.0) {
-                vx = (vx / speed) * 5.0;
-                vy = (vy / speed) * 5.0;
+            // If we shrank damping all the way down and still couldn't find a good step,
+            // the math is stuck in a weird local minimum. Bump the ball slightly to escape.
+            if (!stepAccepted) {
+                vx = oldVx + (Math.random() - 0.5) * 0.5;
+                vy = oldVy + (Math.random() - 0.5) * 0.5;
+                damping = 0.8; // Reset damping
             }
         }
 
@@ -151,9 +163,17 @@ public class Newton_Raphson_Bot implements GolfBot {
     private double[] simulateForPosition(GolfSimulator simulator, double[] startPosition, double vx, double vy) {
         try {
             ShotResult result = simulator.simulate(startPosition, new double[] { vx, vy });
+
+            // BUG FIX: If it hits water, treat it as a massive error so the bot rejects
+            // this shot and tries something else, instead of trying to optimize around a
+            // water shot which is a dead end
+            if (result.getOutcome() == ShotResult.Outcome.IN_WATER
+                    || result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS) {
+                return new double[] { 9999.0, 9999.0 };
+            }
             return result.getFinalState();
         } catch (Exception e) {
-            return startPosition;
+            return new double[] { 9999.0, 9999.0 };
         }
     }
 }

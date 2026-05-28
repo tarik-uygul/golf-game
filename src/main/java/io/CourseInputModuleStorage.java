@@ -1,7 +1,11 @@
 package io;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.scene.paint.Color;
 import model.HeightFunction;
+import model.obstacles.Obstacle;
 
 /**
  * All the containers we need I think
@@ -17,6 +21,9 @@ public class CourseInputModuleStorage {
     public double targetX, targetY;
     public double targetRadius;
     public double stepSize;
+
+    // user-placed obstacles drawn on top of the terrain
+    private final List<Obstacle> obstacles = new ArrayList<>();
 
     public CourseInputModuleStorage(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
             double targetX, double targetY, double targetRadius,
@@ -94,5 +101,22 @@ public class CourseInputModuleStorage {
 
     public Color getWaterColor() {
         return Color.CORNFLOWERBLUE;
+    }
+
+    // Obstacle management — additive only; reset/start/target/friction logic untouched
+    public List<Obstacle> getObstacles() {
+        return obstacles;
+    }
+
+    public void addObstacle(Obstacle o) {
+        obstacles.add(o);
+    }
+
+    public boolean removeObstacle(Obstacle o) {
+        return obstacles.remove(o);
+    }
+
+    public void clearObstacles() {
+        obstacles.clear();
     }
 }

@@ -6,6 +6,10 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 import io.CourseInputModuleStorage;
+import model.obstacles.Obstacle;
+import model.obstacles.Sand;
+import model.obstacles.Tree;
+import model.obstacles.Water;
 
 public class CourseRenderer {
 
@@ -81,8 +85,43 @@ public class CourseRenderer {
             }
         }
 
+        drawObstacles();
         drawTarget();
         drawStartPosition();
+    }
+
+    // draws all user-placed obstacles on top of the terrain
+    private void drawObstacles() {
+        for (Obstacle o : course.getObstacles()) {
+            double cx = toPixelX(o.getX());
+            double cy = toPixelY(o.getY());
+            double rPix = o.getRadius() * scaleX;
+
+            if (o instanceof Tree) {
+                gc.setFill(Color.DARKGREEN);
+                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
+                // little brown trunk dot so trees read as trees
+                double trunk = Math.max(rPix * 0.25, 2);
+                gc.setFill(Color.SADDLEBROWN);
+                gc.fillOval(cx - trunk / 2, cy - trunk / 2, trunk, trunk);
+            } else if (o instanceof Sand) {
+                gc.setFill(Color.KHAKI);
+                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
+            } else if (o instanceof Water) {
+                gc.setFill(course.getWaterColor());
+                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
+            }
+        }
+    }
+
+    // hit-test in world coordinates — returns the topmost (last-drawn) obstacle under the point, or null
+    public Obstacle obstacleAtWorld(double wx, double wy) {
+        List<Obstacle> list = course.getObstacles();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            Obstacle o = list.get(i);
+            if (o.contains(wx, wy)) return o;
+        }
+        return null;
     }
 
     // if the height is negative its water

@@ -1,7 +1,5 @@
 package bots;
 
-import java.util.Random;
-
 import io.CourseInputModuleStorage;
 import model.GolfSimulator;
 import model.ShotResult;
@@ -16,13 +14,11 @@ public class Hill_Climbing_Bot implements GolfBot {
     private final double dt;
     private final double maxTime;
     private final String solverType;
-    private final Random random;
 
     public Hill_Climbing_Bot(double dt, double maxTime, String solverType) {
         this.dt = dt;
         this.maxTime = maxTime;
         this.solverType = solverType;
-        this.random = new Random();
     }
 
     @Override
@@ -83,7 +79,8 @@ public class Hill_Climbing_Bot implements GolfBot {
         return new double[] { vx, vy };
     }
 
-    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course, double vx,
+    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course,
+            double vx,
             double vy) { // we get the scores for shots from this func, the lower the score the better.
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });

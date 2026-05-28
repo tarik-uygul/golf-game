@@ -6,11 +6,10 @@ import model.ShotResult;
 import model.ShotResult.Outcome;
 
 public class RuleBasedBot implements GolfBot {
-    // manual gives maximum speed of 5 m/s for the ball, prevents the ball from
-    // suggesting unrealistic shots
     private static final double MAX_SPEED = 5.0;
+    private static final int ANGLE_STEPS = 3;
+    private static final int SPEED_STEPS = 3;
 
-    // simulation settings
     private final double dt;
     private final double maxTime;
 
@@ -19,83 +18,96 @@ public class RuleBasedBot implements GolfBot {
         this.maxTime = maxTime;
     }
 
-    // this method returns chosen shot as a 2d velocity vector [vx,vy]
-    // basically it returns the shot the bot wants to play
     @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
-
         GolfSimulator simulator = new GolfSimulator(course, "rk4", dt, maxTime);
-
         double[] target = course.getTargetPosition();
-        // computes direction from the ball to the target
-        double dx = target[0] - currentPosition[0];// horizontal
-        double dy = target[1] - currentPosition[1]; // vertical difference
 
-        double baseAngle = Math.atan2(dy, dx);// gives the angle of two points from current position to the target
+        double dx = target[0] - currentPosition[0];
+        double dy = target[1] - currentPosition[1];
+        double baseAngle = Math.atan2(dy, dx);
 
-        // best score starts at infinity, best shot start at zero velocity
-        // the lower the score the better
+        ShotChoice best = searchAround(
+                simulator, course, currentPosition,
+                baseAngle,
+                Math.PI / 2,
+                ANGLE_STEPS,
+                SPEED_STEPS,
+                0.8,
+                MAX_SPEED);
+
+        return new double[] { best.vx, best.vy };
+    }
+
+    private ShotChoice searchAround(GolfSimulator simulator,
+            CourseInputModuleStorage course,
+            double[] currentPosition,
+            double centerAngle,
+            double angleSpread,
+            int angleSteps,
+            int speedSteps,
+            double minSpeed,
+            double maxSpeed) {
+
         double bestScore = Double.POSITIVE_INFINITY;
-        double[] bestShot = new double[] { 0, 0 };
+        ShotChoice best = new ShotChoice(0, 0, bestScore);
+        double[] target = course.getTargetPosition();
 
-        // try different angles around the target direction
-        int angleSteps = 15; // 25 different directions
-        int speedSteps = 10;// bot tries 15 different speeds
-
-        // it searches within a 90-degree range to the target
-        double angleSpread = Math.PI / 2; // +- 90 degrees
-        // tries angles
         for (int i = 0; i < angleSteps; i++) {
+            double angle = centerAngle - angleSpread / 2 + i * (angleSpread / (angleSteps - 1));
 
-            double angle = baseAngle - angleSpread / 2
-                    + i * (angleSpread / (angleSteps - 1));
-            // tries speeds
-            for (int j = 1; j <= speedSteps; j++) {
+            for (int j = 0; j < speedSteps; j++) {
+                double speed = minSpeed + j * ((maxSpeed - minSpeed) / (speedSteps - 1));
 
-                double speed = j * (MAX_SPEED / speedSteps);
-                // convert angle and speed into velocity
                 double vx = speed * Math.cos(angle);
                 double vy = speed * Math.sin(angle);
 
-                // simulation - so bot hits the ball from current position with this velocity
-                // and checks where it ends up
                 ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
 
-                // if we hit the target → perfect shot
                 if (result.getOutcome() == ShotResult.Outcome.IN_TARGET) {
-                    return new double[] { vx, vy };
+                    return new ShotChoice(vx, vy, -1);
                 }
-                // if the ball didn't get into the target, it gives a score
-                double score = score(result, course);
-                // keeps the score
+
+                double distance = calculateDistance(result.getFinalX(), result.getFinalY(), target);
+                double score = calculateScore(result.getOutcome(), distance);
+
                 if (score < bestScore) {
                     bestScore = score;
-                    bestShot = new double[] { vx, vy };
+                    best = new ShotChoice(vx, vy, score);
                 }
             }
         }
 
-        return bestShot;
+        return best;
     }
 
-    private double score(ShotResult result, CourseInputModuleStorage course) {
+    private double calculateDistance(double x, double y, double[] target) {
+        double dx = x - target[0];
+        double dy = y - target[1];
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
-        double[] target = course.getTargetPosition();
-
-        double dx = result.getFinalX() - target[0];
-        double dy = result.getFinalY() - target[1];
-        double distance = Math.sqrt(dx * dx + dy * dy);
-
-        // simple rules
-        switch (result.getOutcome()) {
+    private double calculateScore(ShotResult.Outcome outcome, double distance) {
+        switch (outcome) {
             case IN_WATER:
-                return 1000 + distance; // big penalty
+                return 1000 + distance;
             case TIMEOUT:
                 return 500 + distance;
             case STOPPED:
-                return distance; // closer is better
             default:
                 return distance;
+        }
+    }
+
+    private static class ShotChoice {
+        final double vx;
+        final double vy;
+        final double score;
+
+        ShotChoice(double vx, double vy, double score) {
+            this.vx = vx;
+            this.vy = vy;
+            this.score = score;
         }
     }
 }

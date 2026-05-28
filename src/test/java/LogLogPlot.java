@@ -1,4 +1,3 @@
-package src.test;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -118,16 +117,9 @@ public class LogLogPlot extends Application {
         stage.show();
     }
 
-    // -----------------------------------------------------------------------
-    // Run the experiment using YOUR ODESystemBuilder + ExpressionParser
-    // The harmonic oscillator equations are written as strings, exactly like
-    // you would type them into the Visualizer GUI
-    // -----------------------------------------------------------------------
     private ExperimentData runExperiment() {
 
         // harmonic oscillator: x' = v, v' = -1*x
-        // written as strings so they go through ExpressionParser just like in the
-        // Visualizer
         String[] names = { "x", "v" };
         String[] eqs = { "v", "-1*x" };
         ODESystemBuilder ode = new ODESystemBuilder(eqs, names, new HashMap<>());
@@ -143,7 +135,6 @@ public class LogLogPlot extends Application {
         for (int i = 0; i < n; i++) {
             double h = STEP_SIZES[i];
 
-            // Euler - run TIME_REPS times and average the timing for a stable measurement
             long totalTime = 0;
             double[] eulerResult = null;
             for (int rep = 0; rep < TIME_REPS; rep++) {
@@ -154,7 +145,8 @@ public class LogLogPlot extends Application {
             eulerTimes[i] = totalTime / (double) TIME_REPS;
             eulerErrors[i] = euclideanError(eulerResult, exactSolution(END_TIME));
 
-            // RK4 - same timing approach
+            // RK4 is more expensive, so we run it fewer times to keep total experiment time
+            // reasonable
             totalTime = 0;
             double[] rk4Result = null;
             for (int rep = 0; rep < TIME_REPS; rep++) {
@@ -207,7 +199,7 @@ public class LogLogPlot extends Application {
     }
 
     // -----------------------------------------------------------------------
-    // Drawing - unchanged from original, just draws the plots onto canvases
+    // just draws the plots
     // -----------------------------------------------------------------------
     private void drawLogLogPlot(Canvas canvas,
             String plotTitle,

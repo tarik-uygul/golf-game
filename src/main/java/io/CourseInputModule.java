@@ -6,28 +6,28 @@ import model.HeightFunction;
 
 /**
  * Usage for now, might look slightly different for a functional gui interface:
- *   CourseInputProcessor p = new CourseInputProcessor();
- *   CourseConfig config = p.buildConfig(
- *       "0.25*sin((x+y)/10)+1",
- *       "0.08", "0.2",
- *       "7.0", "8.0",
- *       "14.0", "1.0",
- *       "0.1", "0.01"
- *   );
- *   Basically all the sanity checks babes
- *   Later this should evaluate strings as inputs from the GUI (text fields?)
+ * CourseInputProcessor p = new CourseInputProcessor();
+ * CourseConfig config = p.buildConfig(
+ * "0.25*sin((x+y)/10)+1",
+ * "0.08", "0.2",
+ * "7.0", "8.0",
+ * "14.0", "1.0",
+ * "0.1", "0.01"
+ * );
+ * Basically all the sanity checks babes
+ * Later this should evaluate strings as inputs from the GUI (text fields?)
  */
 public class CourseInputModule {
 
     private final ExpressionParser parser = new ExpressionParser();
-    private static final String[] vars = {"x", "y"};
+    private static final String[] vars = { "x", "y" };
     private static final Map<String, Double> noConstants = Map.of();
 
     public CourseInputModuleStorage buildConfig(String heightExpr,
-                                    String muKStr, String muSStr,
-                                    String startXStr, String startYStr,
-                                    String targetXStr, String targetYStr,
-                                    String radiusStr, String stepSizeStr) {
+            String muKStr, String muSStr,
+            String startXStr, String startYStr,
+            String targetXStr, String targetYStr,
+            String radiusStr, String stepSizeStr) {
 
         double muK = parsePositive(muKStr, "µK");
         double muS = parsePositive(muSStr, "µS");
@@ -55,8 +55,8 @@ public class CourseInputModule {
         // Validate height expression by test-evaluating at two points
         String cleanExpr = heightExpr.replace(" ", "");
         try {
-            parser.evaluate(cleanExpr, vars, new double[]{0.0, 0.0}, noConstants);
-            parser.evaluate(cleanExpr, vars, new double[]{1.0, 1.0}, noConstants);
+            parser.evaluate(cleanExpr, vars, new double[] { 0.0, 0.0 }, noConstants);
+            parser.evaluate(cleanExpr, vars, new double[] { 1.0, 1.0 }, noConstants);
         } catch (Exception e) {
             throw new IllegalArgumentException(
                     "Invalid height expression: " + e.getMessage());

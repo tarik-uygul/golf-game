@@ -9,8 +9,8 @@ public class GolfPhysicsFunction implements ODEFunction {
     private static final double G = 9.81;
     private final CourseInputModuleStorage course;
 
-    public GolfPhysicsFunction(CourseInputModuleStorage course2) {
-        this.course = course2;
+    public GolfPhysicsFunction(CourseInputModuleStorage course) {
+        this.course = course;
     }
 
     @Override

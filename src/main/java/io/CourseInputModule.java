@@ -47,7 +47,7 @@ public class CourseInputModule {
                     "µK should be between 0.05 and 0.1 for grass (got " + muK + ")");
         if (muS < 0.1 || muS > 0.2)
             throw new IllegalArgumentException(
-                    "µS should be between 0.1 and 0.2 for grass (got " + muS + ")");
+                    "µS should be between 0.1 and 0.2 for sand (got " + muS + ")");
         if (radius < 0.05 || radius > 0.15)
             throw new IllegalArgumentException(
                     "Target radius should be between 0.05 and 0.15 (got " + radius + ")");

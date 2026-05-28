@@ -13,7 +13,7 @@ public class DifficultyMenu {
 
     private VBox layout;
 
-    public DifficultyMenu(GolfApp app) {
+    public DifficultyMenu(GolfApp app, boolean editorMode) {
 
         // title
         Text title = new Text("SELECT DIFFICULTY");
@@ -40,9 +40,15 @@ public class DifficultyMenu {
                 "Hard", "description of hard course",
                 "#c0392b", "#e74c3c");
 
-        easyBtn.setOnAction(e -> app.startGame("Easy"));
-        mediumBtn.setOnAction(e -> app.startGame("Medium"));
-        hardBtn.setOnAction(e -> app.startGame("Hard"));
+        if (editorMode) {
+            easyBtn.setOnAction(e -> app.startEditor("Easy"));
+            mediumBtn.setOnAction(e -> app.startEditor("Medium"));
+            hardBtn.setOnAction(e -> app.startEditor("Hard"));
+        } else {
+            easyBtn.setOnAction(e -> app.startGame("Easy"));
+            mediumBtn.setOnAction(e -> app.startGame("Medium"));
+            hardBtn.setOnAction(e -> app.startGame("Hard"));
+        }
 
         // back button
         Button backBtn = new Button("Back");
@@ -98,4 +104,11 @@ public class DifficultyMenu {
     }
 
     public VBox getLayout() { return layout; }
+
+    // I am hijacking the difficulty menu also for the create mode
+    // So the class relies on information whether it is the edit mode or not
+    //And the basic play menu is here so I wouldn't have to change it completely
+    public DifficultyMenu(GolfApp app) {
+        this(app, false);
+    }
 }

@@ -37,6 +37,43 @@ public class GolfApp extends Application {
         stage.setScene(new Scene(menu.getLayout(), interfaceWidth, interfaceHeight));
     }
 
+    public void difficultyMenuForEditor() {
+        DifficultyMenu menu = new DifficultyMenu(this, true);
+        stage.setScene(new Scene(menu.getLayout(), interfaceWidth, interfaceHeight));
+    }
+
+    public void startEditor(String difficulty) {
+        try {
+            CourseInputModuleStorage course = switch (difficulty) {
+                case "Easy"   -> FakeEasyCourse.build();
+                case "Medium" -> FakeEasyCourse.build(); // replace later
+                case "Hard"   -> FakeEasyCourse.build(); // replace later
+                default -> throw new IllegalArgumentException("Invalid difficulty");
+            };
+            CourseEditorScreen editor = new CourseEditorScreen(this, course);
+            stage.setScene(new Scene(editor.getLayout(), interfaceWidth, interfaceHeight + 60));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void startGameWithCourse(CourseInputModuleStorage course) {
+        CourseRenderer renderer = new CourseRenderer(course, interfaceWidth, interfaceHeight);
+        Canvas canvas = renderer.getCanvas();
+        canvas.setWidth(interfaceWidth);
+        canvas.setHeight(interfaceHeight);
+        StackPane canvasHolder = new StackPane(canvas);
+        canvasHolder.setMinSize(interfaceWidth, interfaceHeight);
+        canvasHolder.setMaxSize(interfaceWidth, interfaceHeight);
+        ControlPanel controls = new ControlPanel(course);
+        //NOTHING WORKS WITHOUT ctrl DO NOT TOUCH
+        SimulationController ctrl = new SimulationController(course, renderer,controls, DT, MAX_TIME);
+        renderer.drawCourse();
+        HBox root = new HBox();
+        root.getChildren().addAll(controls.getPanel(), canvasHolder);
+        stage.setScene(new Scene(root, interfaceWidth, interfaceHeight + 60));
+    }
+
     public void startGame(String difficulty) {
         try {
             CourseInputModuleStorage course;
@@ -70,6 +107,7 @@ public class GolfApp extends Application {
 
             ControlPanel controls = new ControlPanel(course);
 
+            //NOTHING WORKS WITHOUT ctrl DO NOT TOUCH
             SimulationController ctrl = new SimulationController(course, renderer, controls, DT, MAX_TIME);
 
             renderer.drawCourse();

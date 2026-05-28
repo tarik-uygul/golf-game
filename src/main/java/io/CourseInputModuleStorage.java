@@ -2,6 +2,12 @@ package io;
 
 import javafx.scene.paint.Color;
 import model.HeightFunction;
+import java.util.ArrayList;
+import java.util.List;
+import model.obstacles.Obstacle;
+import model.obstacles.Sand;
+import model.obstacles.Water;
+import model.obstacles.Tree;
 
 /**
  * All the containers we need I think
@@ -17,6 +23,12 @@ public class CourseInputModuleStorage {
     public double targetX, targetY;
     public double targetRadius;
     public double stepSize;
+    private final List<Obstacle> obstacles =  new ArrayList<>();
+
+    public void addObstacle(Obstacle o)         { obstacles.add(o); }
+    public void removeObstacle(Obstacle o)      { obstacles.remove(o); }
+    public List<Obstacle> getObstacles()        { return obstacles; }
+    public void clearObstacles()                { obstacles.clear(); }
 
     public CourseInputModuleStorage(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
                         double targetX, double targetY, double targetRadius,

@@ -1,0 +1,26 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-26",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-26",
+            "path": "C:\\Program Files\\Java\\jdk-26",
+            "default": true
+        }
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.base.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.controls.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.fxml.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.graphics.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.media.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.swing.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx.web.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\javafx-swt.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\jdk.jsobject.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\jfx.incubator.input.jar",
+        "c:\\Program Files\\Java\\javafx-sdk-26\\lib\\jfx.incubator.richtext.jar"
+    ]
+}

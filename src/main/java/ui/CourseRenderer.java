@@ -17,8 +17,8 @@ public class CourseRenderer {
     private final GraphicsContext gc; // for drawing stuff
     private CourseInputModuleStorage course;
 
-    private final double scaleX;
-    private final double scaleY;
+    private double scaleX;
+    private double scaleY;
 
     private javafx.animation.AnimationTimer ballAnimation;
     private int animationStep = 0;
@@ -311,5 +311,15 @@ public class CourseRenderer {
 
     public void clearPaths() {
         drawCourse(); // just redraw everything
+    }
+
+    // for resizing the window
+    public void resize(double newWidth, double newHeight, CourseInputModuleStorage course) {
+        this.course = course;
+        canvas.setWidth(newWidth);
+        canvas.setHeight(newHeight);
+        // Recalculate scale based on new canvas dimensions
+        this.scaleX = newWidth  / course.getCourseWidth();
+        this.scaleY = newHeight / course.getCourseHeight();
     }
 }

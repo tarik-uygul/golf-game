@@ -12,6 +12,7 @@ public class ControlPanel {
     private final ComboBox<String> solverPicker;
     private final ComboBox<String> botPicker;
     private final Button resetButton;
+    private final Button returnButton;
     private final Label statusLabel;
     private final Label shotCountLabel;
     private final Label positionLabel;
@@ -56,6 +57,8 @@ public class ControlPanel {
         botButton = new Button("Bot shot");
         resetButton.setMaxWidth(Double.MAX_VALUE);
         botButton.setMaxWidth(Double.MAX_VALUE);
+        returnButton = new Button("Return");
+        returnButton.setMaxWidth(Double.MAX_VALUE);
 
         shotCountLabel = new Label("Shots: 0");
         shotCountLabel.setWrapText(true);
@@ -101,6 +104,8 @@ public class ControlPanel {
 
         // show labels and textfields
         panel = new VBox(10,
+            returnButton,
+            new Separator(),
             new Label("Solver:"), solverPicker,
             new Separator(),
             new Label("Bot button:"), botPicker,
@@ -224,5 +229,9 @@ public class ControlPanel {
         treeCountLabel.setText("Trees: " + trees);
         sandCountLabel.setText("Sand: " + sand);
         waterCountLabel.setText("Water: " + water);
+    }
+
+    public void setOnReturn(Runnable handler) {
+        returnButton.setOnAction(e -> handler.run());
     }
 }

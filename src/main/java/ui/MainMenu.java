@@ -39,6 +39,10 @@ public class MainMenu {
         layout.setPadding(new Insets(40));
         layout.getChildren().addAll(titleBlock, playButton, createButton);
         layout.setBackground(new Background(new BackgroundFill(Color.web("#1a5c2a"), CornerRadii.EMPTY, Insets.EMPTY)));
+    
+        // full screen
+        layout.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        VBox.setVgrow(layout, Priority.ALWAYS);
     }
 
     // create button with hover effect

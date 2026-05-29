@@ -5,6 +5,10 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import java.util.List;
 
+import model.obstacles.Obstacle;
+import model.obstacles.Water;
+import model.obstacles.Sand;
+import model.obstacles.Tree;
 import io.CourseInputModuleStorage;
 import model.obstacles.Obstacle;
 import model.obstacles.Sand;
@@ -31,6 +35,12 @@ public class CourseRenderer {
 
     // resolution of the terrain (more is nicer but slower)
     private static final int gridResolution = 100;
+
+    //ghost preview of where the obstacles will be placed
+    private double ghostX = -1;
+    private double ghostY = -1;
+    private double ghostRadius = 1.0;
+    private boolean showGhost = false;
 
     public CourseRenderer(CourseInputModuleStorage course, double canvasWidth, double canvasHeight) {
         this.course = course;
@@ -88,30 +98,6 @@ public class CourseRenderer {
         drawObstacles();
         drawTarget();
         drawStartPosition();
-    }
-
-    // draws all user-placed obstacles on top of the terrain
-    private void drawObstacles() {
-        for (Obstacle o : course.getObstacles()) {
-            double cx = toPixelX(o.getX());
-            double cy = toPixelY(o.getY());
-            double rPix = o.getRadius() * scaleX;
-
-            if (o instanceof Tree) {
-                gc.setFill(Color.DARKGREEN);
-                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
-                // little brown trunk dot so trees read as trees
-                double trunk = Math.max(rPix * 0.25, 2);
-                gc.setFill(Color.SADDLEBROWN);
-                gc.fillOval(cx - trunk / 2, cy - trunk / 2, trunk, trunk);
-            } else if (o instanceof Sand) {
-                gc.setFill(Color.KHAKI);
-                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
-            } else if (o instanceof Water) {
-                gc.setFill(course.getWaterColor());
-                gc.fillOval(cx - rPix, cy - rPix, rPix * 2, rPix * 2);
-            }
-        }
     }
 
     // hit-test in world coordinates — returns the topmost (last-drawn) obstacle under the point, or null
@@ -311,6 +297,56 @@ public class CourseRenderer {
 
     public void clearPaths() {
         drawCourse(); // just redraw everything
+    }
+
+    private void drawObstacles() {
+        for (Obstacle o : course.getObstacles()) {
+            double px = toPixelX(o.getX());
+            double py = toPixelY(o.getY());
+            double pr = o.getRadius() * scaleX;
+
+            if (o instanceof Water) {
+                gc.setFill(Color.color(0.15, 0.45, 0.95, 1));
+                gc.fillOval(px - pr, py - pr, pr * 2, pr * 2);
+
+            } else if (o instanceof Sand) {
+                gc.setFill(Color.color(0.93, 0.83, 0.50, 1));
+                gc.fillOval(px - pr, py - pr, pr * 2, pr * 2);
+
+            } else if (o instanceof Tree) {
+                //canopy
+                gc.setFill(Color.color(0.10, 0.45, 0.10, 1));
+                gc.fillOval(px - pr, py - pr, pr * 2, pr * 2);
+                gc.setStroke(Color.color(0.03, 0.22, 0.03));
+                gc.setLineWidth(1.5);
+                gc.strokeOval(px - pr, py - pr, pr * 2, pr * 2);
+                //trunk dot
+                gc.setFill(Color.color(0.40, 0.25, 0.05));
+                gc.fillOval(px - 3, py - 3, 6, 6);
+            }
+        }
+    }
+
+    private void drawGhost() {
+        double px = toPixelX(ghostX);
+        double py = toPixelY(ghostY);
+        double pr = ghostRadius * scaleX;
+        gc.setStroke(Color.color(1, 1, 1, 0.55));
+        gc.setLineWidth(2);
+        gc.setLineDashes(6);
+        gc.strokeOval(px - pr, py - pr, pr * 2, pr * 2);
+        gc.setLineDashes(0);
+    }
+
+    public void setGhostPreview(double worldX, double worldY, double radius) {
+        ghostX = worldX;
+        ghostY = worldY;
+        ghostRadius = radius;
+        showGhost = true;
+    }
+
+    public void hideGhostPreview() {
+        showGhost = false;
     }
 
     // for resizing the window

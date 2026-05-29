@@ -31,7 +31,7 @@ public class MainMenu {
         Button createButton = makeMenuButton("Create", "#2e8b57", "#3cb371");
 
         playButton.setOnAction(e -> app.difficultyMenu());
-        createButton.setOnAction(e -> { /* redirect to creation mode */ });
+        createButton.setOnAction(e -> app.difficultyMenuForEditor());
 
         // layout
         layout = new VBox(28);

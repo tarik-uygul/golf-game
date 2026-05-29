@@ -25,6 +25,11 @@ public class CourseInputModuleStorage {
     // user-placed obstacles drawn on top of the terrain
     private final List<Obstacle> obstacles = new ArrayList<>();
 
+    public void addObstacle(Obstacle o)         { obstacles.add(o); }
+    public void removeObstacle(Obstacle o)      { obstacles.remove(o); }
+    public List<Obstacle> getObstacles()        { return obstacles; }
+    public void clearObstacles()                { obstacles.clear(); }
+
     public CourseInputModuleStorage(HeightFunction heightFunction, double muK, double muS, double startX, double startY,
             double targetX, double targetY, double targetRadius,
             double stepSize) {
@@ -101,22 +106,5 @@ public class CourseInputModuleStorage {
 
     public Color getWaterColor() {
         return Color.CORNFLOWERBLUE;
-    }
-
-    // Obstacle management — additive only; reset/start/target/friction logic untouched
-    public List<Obstacle> getObstacles() {
-        return obstacles;
-    }
-
-    public void addObstacle(Obstacle o) {
-        obstacles.add(o);
-    }
-
-    public boolean removeObstacle(Obstacle o) {
-        return obstacles.remove(o);
-    }
-
-    public void clearObstacles() {
-        obstacles.clear();
     }
 }

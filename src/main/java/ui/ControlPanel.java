@@ -57,7 +57,7 @@ public class ControlPanel {
         botButton = new Button("Bot shot");
         resetButton.setMaxWidth(Double.MAX_VALUE);
         botButton.setMaxWidth(Double.MAX_VALUE);
-        returnButton = new Button("Return");
+        returnButton = new Button("Back");
         returnButton.setMaxWidth(Double.MAX_VALUE);
 
         shotCountLabel = new Label("Shots: 0");
@@ -104,8 +104,6 @@ public class ControlPanel {
 
         // show labels and textfields
         panel = new VBox(10,
-            returnButton,
-            new Separator(),
             new Label("Solver:"), solverPicker,
             new Separator(),
             new Label("Bot button:"), botPicker,
@@ -130,6 +128,7 @@ public class ControlPanel {
             new HBox(5, new Label("\u00B5k"), muKField), // label µk
             new HBox(5, new Label("\u00B5s"), muSField), // label µs
             new Separator(),
+            returnButton,
             shotCountLabel,
             statusLabel,
             positionLabel

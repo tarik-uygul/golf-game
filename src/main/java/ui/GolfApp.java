@@ -59,102 +59,64 @@ public class GolfApp extends Application {
                 default -> throw new IllegalArgumentException("Invalid difficulty");
             };
             CourseEditorScreen editor = new CourseEditorScreen(this, course);
-            stage.setScene(new Scene(editor.getLayout(), DEFAULT_WIDTH, DEFAULT_HEIGHT + 60));
+            stage.setScene(new Scene(editor.getLayout()));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void startGameWithCourse(CourseInputModuleStorage course) {
-        CourseRenderer renderer = new CourseRenderer(course, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        double initialCanvasW = DEFAULT_WIDTH - CONTROL_PANEL_WIDTH;
+        double initialCanvasH = DEFAULT_HEIGHT;
+
+        CourseRenderer renderer = new CourseRenderer(course, initialCanvasW, initialCanvasH);
         Canvas canvas = renderer.getCanvas();
-        canvas.setWidth(DEFAULT_WIDTH);
-        canvas.setHeight(DEFAULT_HEIGHT);
+
+        // wrap canvas in stackpane so it can resize with the window
         StackPane canvasHolder = new StackPane(canvas);
-        canvasHolder.setMinSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        canvasHolder.setMaxSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        // gives leftover space to canvas instead of control panel
+        HBox.setHgrow(canvasHolder, Priority.ALWAYS);
+
         ControlPanel controls = new ControlPanel(course);
-        //NOTHING WORKS WITHOUT ctrl DO NOT TOUCH
-        SimulationController ctrl = new SimulationController(course, renderer,controls, DT, MAX_TIME);
+        controls.getPanel().setMinWidth(CONTROL_PANEL_WIDTH);
+        controls.getPanel().setMaxWidth(CONTROL_PANEL_WIDTH);
+        controls.setOnReturn(() -> difficultyMenu());
+
+        // NOTHING WORKS WITHOUT ctrl DO NOT TOUCH
+        SimulationController ctrl = new SimulationController(course, renderer, controls, DT, MAX_TIME);
+
         renderer.drawCourse();
-        HBox root = new HBox();
-        root.getChildren().addAll(controls.getPanel(), canvasHolder);
-        stage.setScene(new Scene(root, DEFAULT_WIDTH, DEFAULT_HEIGHT + 60));
+
+        HBox root = new HBox(controls.getPanel(), canvasHolder);
+        Scene scene = new Scene(root);
+
+        canvasHolder.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            double w = newBounds.getWidth();
+            double h = newBounds.getHeight();
+            if (w > 0 && h > 0) {
+                renderer.resize(w, h, course);
+                renderer.drawCourse();
+            }
+        });
+
+        stage.setScene(scene);
     }
 
     public void startGame(String difficulty) {
         try {
-            CourseInputModuleStorage course;
-
-            switch (difficulty) {
-                case "Easy":
-                    course = FakeEasyCourse.build();
-                    break;
-
-                case "Medium":
-                    course = FakeEasyCourse.build(); // change to medium
-                    break;
-
-                case "Hard":
-                    course = FakeEasyCourse.build(); // change to hard
-                    break;
-
-                default:
-                    throw new IllegalArgumentException("Invalid difficulty");
-            }
-
-            CourseRenderer renderer = new CourseRenderer(course, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-
-            Canvas canvas = renderer.getCanvas();
-
-            // wrap canvas in stackpane so it can resize with the window
-            StackPane canvasHolder = new StackPane(canvas);
-            // gives leftover space to canvas instead of control panel
-            HBox.setHgrow(canvasHolder, Priority.ALWAYS);
-
-            ControlPanel controls = new ControlPanel(course);
-            controls.getPanel().setMinWidth(CONTROL_PANEL_WIDTH);
-            controls.getPanel().setMaxWidth(CONTROL_PANEL_WIDTH);
-            controls.setOnReturn(() -> difficultyMenu());
-
-            //NOTHING WORKS WITHOUT ctrl DO NOT TOUCH
-            SimulationController ctrl = new SimulationController(course, renderer, controls, DT, MAX_TIME);
-
-            renderer.drawCourse();
-
-            HBox root = new HBox();
-
-            root.getChildren().addAll(controls.getPanel(), canvasHolder);
-
-            Scene scene = new Scene(root);
-
-            // Resize canvas when the window changes size
-            canvasHolder.widthProperty().addListener((obs, oldW, newW) -> {
-                double w = newW.doubleValue();
-                double h = canvasHolder.getHeight();
-                canvas.setWidth(w);
-                canvas.setHeight(h);
-                renderer.resize(w, h, course);
-                renderer.drawCourse();
-            });
-
-            canvasHolder.heightProperty().addListener((heightObs, oldH, newH) -> {
-                double w = canvasHolder.getWidth();
-                double h = newH.doubleValue();
-                canvas.setWidth(w);
-                canvas.setHeight(h);
-                renderer.resize(w, h, course);
-                renderer.drawCourse();
-            });
-
-            renderer.drawCourse();
-            stage.setScene(scene);
-
+            CourseInputModuleStorage course = switch (difficulty) {
+                case "Easy"   -> FakeEasyCourse.build();
+                case "Medium" -> FakeEasyCourse.build(); // change to medium
+                case "Hard"   -> FakeEasyCourse.build(); // change to hard
+                default -> throw new IllegalArgumentException("Invalid difficulty");
+            };
+            startGameWithCourse(course);
         } catch (Exception e) {
-
             e.printStackTrace();
         }
     }
+
+    public Stage getStage() { return stage; }
 
     public static void main(String[] args) {
         launch(args);

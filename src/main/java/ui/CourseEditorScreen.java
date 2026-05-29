@@ -23,6 +23,7 @@ public class CourseEditorScreen {
     private final HBox layout;
     private final CourseInputModuleStorage course;
     private final CourseRenderer renderer;
+    private Canvas canvas;
 
     //undo stack - stores recently added obstacles so the user can remove them
     private final Deque<model.obstacles.Obstacle> undoStack = new ArrayDeque<>();
@@ -41,19 +42,27 @@ public class CourseEditorScreen {
 
         //canvas side
         renderer = new CourseRenderer(course, 800, 600);
-        Canvas canvas = renderer.getCanvas();
-        canvas.setWidth(800);
-        canvas.setHeight(600);
+        canvas = renderer.getCanvas();
         renderer.drawCourse();
 
         StackPane canvasHolder = new StackPane(canvas);
-        canvasHolder.setMinSize(800, 600);
-        canvasHolder.setMaxSize(800, 600);
+        HBox.setHgrow(canvasHolder, Priority.ALWAYS);
 
         //side panel
         VBox sidePanel = buildSidePanel(app);
 
         layout = new HBox(sidePanel, canvasHolder);
+
+        canvasHolder.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            double w = newBounds.getWidth();
+            double h = newBounds.getHeight();
+            if (w > 0 && h > 0) {
+                canvas.setWidth(w);
+                canvas.setHeight(h);
+                renderer.resize(w, h, course);
+                renderer.drawCourse();
+            }
+        });
 
         canvas.setOnMouseMoved(e -> {
             double wx = renderer.toWorldX(e.getX());
@@ -184,7 +193,11 @@ public class CourseEditorScreen {
         playBtn.setMaxWidth(Double.MAX_VALUE);
         backBtn.setMaxWidth(Double.MAX_VALUE);
 
-        playBtn.setOnAction(e -> app.startGameWithCourse(course));
+        playBtn.setOnAction(e -> {
+            canvas.widthProperty().unbind();
+            canvas.heightProperty().unbind();
+            app.startGameWithCourse(course);
+        });
         backBtn.setOnAction(e -> app.showMainMenu());
 
         VBox panel = new VBox(10,
@@ -194,7 +207,7 @@ public class CourseEditorScreen {
                 new Separator(),
                 new Label("Radius:"),     radiusSlider, radiusValue,
                 new Separator(),
-                new Label("Sand friction:"),
+                new Label("friction:"),
                 new HBox(5, new Label("µk"), muKField),
                 new HBox(5, new Label("µs"), muSField),
                 new Separator(),
@@ -207,6 +220,8 @@ public class CourseEditorScreen {
                 statusLabel
         );
         panel.setPadding(new Insets(10));
+        panel.setMinWidth(170);
+        panel.setMaxWidth(170);  // add this line
         return panel;
     }
     private void parseSandFriction(TextField muKField, TextField muSField) {

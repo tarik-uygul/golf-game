@@ -1,8 +1,10 @@
 package io;
 
 import java.util.Map;
-import physics.ExpressionParser;
+
+import model.CourseConfiguration;
 import model.HeightFunction;
+import physics.ExpressionParser;
 
 /**
  * Usage for now, might look slightly different for a functional gui interface:
@@ -17,13 +19,13 @@ import model.HeightFunction;
  * Basically all the sanity checks babes
  * Later this should evaluate strings as inputs from the GUI (text fields?)
  */
-public class CourseInputModule {
+public class CourseInputProcessing {
 
     private final ExpressionParser parser = new ExpressionParser();
     private static final String[] vars = { "x", "y" };
     private static final Map<String, Double> noConstants = Map.of();
 
-    public CourseInputModuleStorage buildConfig(String heightExpr,
+    public CourseConfiguration buildConfig(String heightExpr,
             String muKStr, String muSStr,
             String startXStr, String startYStr,
             String targetXStr, String targetYStr,
@@ -47,7 +49,7 @@ public class CourseInputModule {
                     "µK should be between 0.05 and 0.1 for grass (got " + muK + ")");
         if (muS < 0.1 || muS > 0.2)
             throw new IllegalArgumentException(
-                    "µS should be between 0.1 and 0.2 for sand (got " + muS + ")");
+                    "µS should be between 0.1 and 0.2 for grass (got " + muS + ")");
         if (radius < 0.05 || radius > 0.15)
             throw new IllegalArgumentException(
                     "Target radius should be between 0.05 and 0.15 (got " + radius + ")");
@@ -62,9 +64,7 @@ public class CourseInputModule {
                     "Invalid height expression: " + e.getMessage());
         }
 
-        HeightFunction heightFunction = new HeightFunction(cleanExpr);
-
-        return new CourseInputModuleStorage(heightFunction,
+        return new CourseConfiguration(new HeightFunction(cleanExpr),
                 muK, muS, startX, startY, targetX, targetY,
                 radius, stepSize);
     }

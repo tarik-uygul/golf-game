@@ -15,7 +15,7 @@ public class GolfApp extends Application {
     private static final double MAX_TIME = 60.0;
     private static final double DEFAULT_WIDTH = 1000;
     private static final double DEFAULT_HEIGHT = 600;
-    private static final double CONTROL_PANEL_WIDTH = 210;
+    private static final double CONTROL_PANEL_WIDTH = 200;
 
     private Stage stage;
 

@@ -220,8 +220,8 @@ public class CourseEditorScreen {
                 statusLabel
         );
         panel.setPadding(new Insets(10));
-        panel.setMinWidth(170);
-        panel.setMaxWidth(170);  // add this line
+        panel.setMinWidth(200);
+        panel.setMaxWidth(200);  // add this line
         return panel;
     }
     private void parseSandFriction(TextField muKField, TextField muSField) {

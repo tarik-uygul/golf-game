@@ -10,6 +10,10 @@ import model.obstacles.Water;
 import model.obstacles.Sand;
 import model.obstacles.Tree;
 import io.CourseInputModuleStorage;
+import model.obstacles.Obstacle;
+import model.obstacles.Sand;
+import model.obstacles.Tree;
+import model.obstacles.Water;
 
 public class CourseRenderer {
 
@@ -17,8 +21,8 @@ public class CourseRenderer {
     private final GraphicsContext gc; // for drawing stuff
     private CourseInputModuleStorage course;
 
-    private final double scaleX;
-    private final double scaleY;
+    private double scaleX;
+    private double scaleY;
 
     private javafx.animation.AnimationTimer ballAnimation;
     private int animationStep = 0;
@@ -91,10 +95,19 @@ public class CourseRenderer {
             }
         }
 
+        drawObstacles();
         drawTarget();
         drawStartPosition();
-        drawObstacles();
-        if (showGhost) drawGhost();
+    }
+
+    // hit-test in world coordinates — returns the topmost (last-drawn) obstacle under the point, or null
+    public Obstacle obstacleAtWorld(double wx, double wy) {
+        List<Obstacle> list = course.getObstacles();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            Obstacle o = list.get(i);
+            if (o.contains(wx, wy)) return o;
+        }
+        return null;
     }
 
     // if the height is negative its water
@@ -334,5 +347,15 @@ public class CourseRenderer {
 
     public void hideGhostPreview() {
         showGhost = false;
+    }
+
+    // for resizing the window
+    public void resize(double newWidth, double newHeight, CourseInputModuleStorage course) {
+        this.course = course;
+        canvas.setWidth(newWidth);
+        canvas.setHeight(newHeight);
+        // Recalculate scale based on new canvas dimensions
+        this.scaleX = newWidth  / course.getCourseWidth();
+        this.scaleY = newHeight / course.getCourseHeight();
     }
 }

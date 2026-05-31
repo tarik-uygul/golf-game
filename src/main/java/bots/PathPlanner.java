@@ -104,31 +104,29 @@ public class PathPlanner {
     }
 
     private static boolean isSafe(double x, double y, CourseInputModuleStorage course) {
-        // Check if the position (x, y) is safe (not colliding with obstacles)
-        // We add a small buffer around obstacles for safety (avoid touching edges)
-        final double SAFETY_BUFFER = 0.1;
+        // Increased buffer from 0.1m to 0.3m so gravity doesn't accidentally pull the ball in
+        final double SAFETY_BUFFER = 0.3; 
         
-        // Check for water obstacles
+        // 1. Check native terrain water (from the math function)
+        if (course.getHeight(x, y) < 0) return false;
+
+        // 2. Check user-placed object obstacles
         if (course.getObstacles() != null) {
             for (Obstacle obstacle : course.getObstacles()) {
-                // Check if point is inside obstacle (with safety buffer)
                 if (obstacle instanceof Water) {
-                    // For water, use exact collision detection
-                    if (obstacle.contains(x, y)) {
-                        return false;
-                    }
-                } else {
-                    // For other obstacles (sand, trees), add buffer for safety
+                    if (obstacle.contains(x, y)) return false;
+                    
+                    // Also check buffer for water so we don't aim too close to the edge
                     double dx = x - obstacle.getX();
                     double dy = y - obstacle.getY();
-                    double dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < obstacle.getRadius() + SAFETY_BUFFER) {
-                        return false;
-                    }
+                    if (Math.sqrt(dx * dx + dy * dy) < obstacle.getRadius() + SAFETY_BUFFER) return false;
+                } else {
+                    double dx = x - obstacle.getX();
+                    double dy = y - obstacle.getY();
+                    if (Math.sqrt(dx * dx + dy * dy) < obstacle.getRadius() + SAFETY_BUFFER) return false;
                 }
             }
         }
-        
         return true;
     }
 
@@ -146,7 +144,7 @@ public class PathPlanner {
         }
         
         List<double[]> sparseCheckPoints = new ArrayList<>();
-        for (int i = 0; i < path.size(); i += 5) { // take every 5th point as a checkpoint
+        for (int i = 0; i < path.size(); i += 2) { // Tighter checkpoints prevent corner-cutting
             sparseCheckPoints.add(path.get(i));
         }
         

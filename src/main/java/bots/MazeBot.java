@@ -44,6 +44,12 @@ public class MazeBot implements GolfBot {
                 0.2, // Waypoint tolerance radius
                 course.stepSize);
 
+            if (course.getObstacles() != null) {
+            for (model.obstacles.Obstacle o : course.getObstacles()) {
+                fakeCourse.addObstacle(o);
+            }
+        }
+
         Newton_Raphson_Bot newtonBot = new Newton_Raphson_Bot(dt, maxTime, solverType);
         return newtonBot.computeShot(currentPosition, fakeCourse);
     }

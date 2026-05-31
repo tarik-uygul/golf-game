@@ -1,1 +1,7 @@
 bin/ 
+target/
+*.class
+*.DS_Store
+*.lst
+
+git 

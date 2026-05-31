@@ -73,6 +73,9 @@ public class SimulationController {
                 case "Rule Based":
                     bot = new RuleBasedBot(dt, maxTime);
                     break;
+                case "Maze Bot":
+                    bot = new bots.MazeBot(controls.getSelectedSolver(), dt, maxTime);
+                        break;
 
                 default:
                     controls.setStatus("No bot loaded.", Color.RED);

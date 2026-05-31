@@ -8,15 +8,20 @@ import physics.EulerSolver;
 import physics.GolfPhysicsFunction;
 import physics.ODEFunction;
 import physics.RungeKutta4;
+import model.obstacles.Obstacle;
+import model.obstacles.Tree;
+import model.obstacles.Water;
 
 public class GolfSimulator {
 
     // which solver to use — "euler" or "rk4"
+
     private final String solverType;
     private final ODEFunction physicsFunc;
     private final CourseInputModuleStorage course;
     private final double dt;
     private final double maxTime;
+    private final CollisionDetector collisionDetector;
 
     public GolfSimulator(CourseInputModuleStorage course, String solverType, double dt, double maxTime) {
         this.course = course;
@@ -24,6 +29,7 @@ public class GolfSimulator {
         this.physicsFunc = new GolfPhysicsFunction(course);
         this.dt = dt;
         this.maxTime = maxTime;
+        this.collisionDetector = new CollisionDetector(course);
     }
 
     // initialVelocity = [vx, vy], starting from currentPosition = [x, y]
@@ -42,6 +48,20 @@ public class GolfSimulator {
             state = doStep(state);
             path.add(state.clone());
             time += dt;
+
+            if (collisionDetector.isOutOfBounds(state[0], state[1])) {
+                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
+            }
+
+            Obstacle obstacle = collisionDetector.getCollidingObstacle(state[0], state[1]);
+
+            if (obstacle instanceof Water) {
+                return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
+            }
+
+            if (obstacle instanceof Tree) {
+                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
+            }
 
             // check water (negative height)
             if (course.getHeight(state[0], state[1]) < 0) {

@@ -49,7 +49,7 @@ public class ControlPanel {
         solverPicker.setMaxWidth(150);
 
         botPicker = new ComboBox<>();
-        botPicker.getItems().addAll("Rule Based", "Hill Climbing", "Newton Raphson");
+        botPicker.getItems().addAll("Rule Based", "Hill Climbing", "Newton Raphson", "Maze Bot");
         botPicker.setValue("Newton Raphson");
         botPicker.setMaxWidth(150);
 

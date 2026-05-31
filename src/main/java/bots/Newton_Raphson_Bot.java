@@ -110,15 +110,15 @@ public class Newton_Raphson_Bot implements GolfBot {
 
             // Damping: take smaller, safer steps. If a step made things worse, reduce
             // damping
-            double oldVx = vx;
+           double oldVx = vx;
             double oldVy = vy;
             double oldDistance = distanceToHole;
             boolean stepAccepted = false;
 
-            // INNER LOOP: Try smaller steps until one improves our score,
+            // INNER LOOP: Try smaller steps until one improves our score, 
             // WITHOUT recalculating the expensive Jacobian derivatives!
             while (damping > 0.01 && !stepAccepted) {
-
+                
                 // 1. Calculate proposed step
                 vx = oldVx - (damping * stepVx);
                 vy = oldVy - (damping * stepVy);
@@ -132,22 +132,19 @@ public class Newton_Raphson_Bot implements GolfBot {
 
                 // 3. Test if this new clamped velocity is actually better
                 double[] testLanding = simulateForPosition(simulator, currentPosition, vx, vy);
-                double newDistance = Math
-                        .sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
+                double newDistance = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
 
                 if (newDistance >= oldDistance) {
-                    // Step failed. Cut damping in half and loop again to try a smaller step
-                    // immediately.
+                    // Step failed. Cut damping in half and loop again to try a smaller step immediately.
                     damping *= 0.5;
                 } else {
-                    // Step worked! Accept it and slightly increase damping for the next full
-                    // iteration.
+                    // Step worked! Accept it and slightly increase damping for the next full iteration.
                     stepAccepted = true;
                     damping = Math.min(0.8, damping * 1.2);
                 }
             }
 
-            // If we shrank damping all the way down and still couldn't find a good step,
+            // If we shrank damping all the way down and still couldn't find a good step, 
             // the math is stuck in a weird local minimum. Bump the ball slightly to escape.
             if (!stepAccepted) {
                 vx = oldVx + (Math.random() - 0.5) * 0.5;
@@ -163,17 +160,14 @@ public class Newton_Raphson_Bot implements GolfBot {
     private double[] simulateForPosition(GolfSimulator simulator, double[] startPosition, double vx, double vy) {
         try {
             ShotResult result = simulator.simulate(startPosition, new double[] { vx, vy });
-
-            // BUG FIX: If it hits water, treat it as a massive error so the bot rejects
-            // this shot and tries something else, instead of trying to optimize around a
-            // water shot which is a dead end
-            if (result.getOutcome() == ShotResult.Outcome.IN_WATER
-                    || result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS) {
-                return new double[] { 9999.0, 9999.0 };
+            
+            // BUG FIX: If it hits water, treat it as a massive error so the bot rejects it
+            if (result.getOutcome() == ShotResult.Outcome.IN_WATER || result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS) {
+                return new double[]{9999.0, 9999.0}; 
             }
             return result.getFinalState();
         } catch (Exception e) {
-            return new double[] { 9999.0, 9999.0 };
+            return new double[]{9999.0, 9999.0};
         }
     }
 }

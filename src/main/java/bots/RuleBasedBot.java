@@ -3,7 +3,6 @@ package bots;
 import io.CourseInputModuleStorage;
 import model.GolfSimulator;
 import model.ShotResult;
-import model.ShotResult.Outcome;
 
 public class RuleBasedBot implements GolfBot {
     private static final double MAX_SPEED = 5.0;
@@ -27,14 +26,8 @@ public class RuleBasedBot implements GolfBot {
         double dy = target[1] - currentPosition[1];
         double baseAngle = Math.atan2(dy, dx);
 
-        ShotChoice best = searchAround(
-                simulator, course, currentPosition,
-                baseAngle,
-                Math.PI / 2,
-                ANGLE_STEPS,
-                SPEED_STEPS,
-                0.8,
-                MAX_SPEED);
+        ShotChoice best = searchAround(simulator, course, currentPosition,
+                baseAngle, Math.PI / 2, ANGLE_STEPS, SPEED_STEPS, 0.8, MAX_SPEED);
 
         return new double[] { best.vx, best.vy };
     }
@@ -58,16 +51,13 @@ public class RuleBasedBot implements GolfBot {
 
             for (int j = 0; j < speedSteps; j++) {
                 double speed = minSpeed + j * ((maxSpeed - minSpeed) / (speedSteps - 1));
-
                 double vx = speed * Math.cos(angle);
                 double vy = speed * Math.sin(angle);
 
                 ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
-
                 if (result.getOutcome() == ShotResult.Outcome.IN_TARGET) {
                     return new ShotChoice(vx, vy, -1);
                 }
-
                 double distance = calculateDistance(result.getFinalX(), result.getFinalY(), target);
                 double score = calculateScore(result.getOutcome(), distance);
 
@@ -90,6 +80,8 @@ public class RuleBasedBot implements GolfBot {
     private double calculateScore(ShotResult.Outcome outcome, double distance) {
         switch (outcome) {
             case IN_WATER:
+            case HIT_TREE:
+            case OUT_OF_BOUNDS:
                 return 1000 + distance;
             case TIMEOUT:
                 return 500 + distance;

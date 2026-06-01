@@ -228,20 +228,24 @@ public class CourseRenderer {
         gc.fillPolygon(new double[]{toX, x1, x2}, new double[]{toY, y1, y2}, 3);
     }
 
-    public void animateBall(List<double[]> path, Runnable onFinished) {
+    public void animateBall(List<double[]> path, double dt, Runnable onFinished) {
         if (ballAnimation != null) ballAnimation.stop();
 
         animationPath = path;
         animationStep = 0;
 
-        int totalSteps = path.size();
-        int stepsPerFrame = Math.max(1, totalSteps / 1000);
+        // Constant playback speed: advance ~4x real-time regardless of shot length.
+        // stepsPerFrame = playbackMultiplier / (framesPerSecond * dt)
+        int stepsPerFrame = Math.max(1, (int)(4.0 / (60.0 * dt)));
 
         ballAnimation = new javafx.animation.AnimationTimer() {
             @Override
             public void handle(long now) {
                 if (animationStep >= animationPath.size()) {
                     stop();
+                    double[] finalPos = animationPath.get(animationPath.size() - 1);
+                    drawCourse();
+                    drawBall(finalPos[0], finalPos[1]);
                     if (onFinished != null) onFinished.run();
                     return;
                 }
@@ -256,7 +260,7 @@ public class CourseRenderer {
                     double dx = pos[0] - prev[0];
                     double dy = pos[1] - prev[1];
                     double distanceMoved = Math.sqrt(dx*dx + dy*dy);
-                    if (distanceMoved < 0.001) { // less than 1mm per frame = effectively stopped
+                    if (distanceMoved < 0.001 * stepsPerFrame) { // scale threshold with stepsPerFrame
                         stop();
                         drawCourse();
                         drawBall(pos[0], pos[1]);

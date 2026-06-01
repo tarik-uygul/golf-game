@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.CourseInputModuleStorage;
+import physics.CollisionDetector;
+import physics.CourseCollisionDetector;
+import physics.ObstacleCollisionDetector;
 import physics.EulerSolver;
 import physics.GolfPhysicsFunction;
 import physics.ODEFunction;
@@ -15,13 +18,17 @@ public class GolfSimulator {
     private final String solverType;
     private final ODEFunction physicsFunc;
     private final CourseInputModuleStorage course;
+    private final CourseCollisionDetector courseDetector;
+    private final CollisionDetector obstacleDetector;
     private final double dt;
     private final double maxTime;
 
     public GolfSimulator(CourseInputModuleStorage course, String solverType, double dt, double maxTime) {
         this.course = course;
         this.solverType = solverType;
-        this.physicsFunc = new GolfPhysicsFunction(course);
+        this.courseDetector = new CourseCollisionDetector(course);
+        this.obstacleDetector = new ObstacleCollisionDetector(course);
+        this.physicsFunc = new GolfPhysicsFunction(course, obstacleDetector);
         this.dt = dt;
         this.maxTime = maxTime;
     }
@@ -43,9 +50,16 @@ public class GolfSimulator {
             path.add(state.clone());
             time += dt;
 
-            // check water (negative height)
-            if (course.getHeight(state[0], state[1]) < 0) {
-                return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
+            // check course boundaries (terrain water, out-of-bounds)
+            ShotResult.Outcome collision = courseDetector.checkCourse(state[0], state[1]);
+            if (collision != null) {
+                return new ShotResult(path, collision, state);
+            }
+
+            // check obstacle objects (trees, water hazards)
+            collision = obstacleDetector.checkTerminal(state[0], state[1]);
+            if (collision != null) {
+                return new ShotResult(path, collision, state);
             }
 
             // check target reached
@@ -80,10 +94,11 @@ public class GolfSimulator {
         if (speed > 1e-4)
             return false;
 
-        // check static friction holds
+        // check static friction holds (uses surface-local friction, e.g. sand)
         double dhdx = course.getSlopeX(state[0], state[1]);
         double dhdy = course.getSlopeY(state[0], state[1]);
         double slopeNorm = Math.sqrt(dhdx * dhdx + dhdy * dhdy);
-        return slopeNorm <= course.getStaticFriction();
+        double muS = obstacleDetector.getSurfaceFriction(state[0], state[1])[1];
+        return slopeNorm <= muS;
     }
 }

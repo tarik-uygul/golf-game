@@ -5,12 +5,15 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import io.CourseInputModuleStorage;
+import model.NoiseMode;
 
 public class ControlPanel {
 
     private final VBox panel;
     private final ComboBox<String> solverPicker;
     private final ComboBox<String> botPicker;
+    private final ComboBox<String> noisePicker;
+    private final CheckBox robustShotCheckBox;
     private final Button resetButton;
     private final Button returnButton;
     private final Label statusLabel;
@@ -52,6 +55,13 @@ public class ControlPanel {
         botPicker.getItems().addAll("Rule Based", "Hill Climbing", "Newton Raphson");
         botPicker.setValue("Newton Raphson");
         botPicker.setMaxWidth(150);
+
+        noisePicker = new ComboBox<>();
+        noisePicker.getItems().addAll("None", "Gaussian (Realistic)", "Small", "Medium", "Large");
+        noisePicker.setValue("None");
+        noisePicker.setMaxWidth(150);
+
+        robustShotCheckBox = new CheckBox("Robust shot");
 
         resetButton = new Button("Reset");
         botButton = new Button("Bot shot");
@@ -106,13 +116,10 @@ public class ControlPanel {
         panel = new VBox(10,
             new Label("Solver:"), solverPicker,
             new Separator(),
-            new Label("Bot button:"), botPicker,
+            new Label("Bot:"), botPicker,
+            new Label("Noise:"), noisePicker,
+            robustShotCheckBox,
             botButton,
-            new Separator(),
-            new Label("Obstacles:"),
-            new HBox(5, offToggle, treeToggle, sandToggle, waterToggle),
-            treeCountLabel, sandCountLabel, waterCountLabel,
-            clearObstaclesButton,
             new Separator(),
             resetButton,
             new Separator(),
@@ -210,6 +217,20 @@ public class ControlPanel {
 
     public String getSelectedBot() {
         return botPicker.getValue();
+    }
+
+    public boolean isRobustShotEnabled() {
+        return robustShotCheckBox.isSelected();
+    }
+
+    public NoiseMode getNoiseMode() {
+        switch (noisePicker.getValue()) {
+            case "Gaussian (Realistic)": return NoiseMode.GAUSSIAN;
+            case "Small":               return NoiseMode.SMALL;
+            case "Medium":              return NoiseMode.MEDIUM;
+            case "Large":               return NoiseMode.LARGE;
+            default:                    return NoiseMode.NONE;
+        }
     }
 
     // current placement mode based on which toggle is active

@@ -7,13 +7,17 @@ import bots.RuleBasedBot;
 import io.CourseInputModuleStorage;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
+import model.BasinCenterer;
 import model.GolfSimulator;
+import model.NoiseMode;
+import model.ShotNoise;
 import model.ShotResult;
 import model.obstacles.Obstacle;
 import model.obstacles.Sand;
 import model.obstacles.Tree;
 import model.obstacles.Water;
 import ui.ControlPanel.PlacementMode;
+import java.util.Random;
 
 public class SimulationController {
 
@@ -30,6 +34,7 @@ public class SimulationController {
     private double dragStartPixelX, dragStartPixelY;
     private static final double MAX_DRAG_PIXELS = 150.0;
     private static final double MAX_SPEED = 5.0;
+    private final Random rng = new Random();
 
     // per-type default radii in world units (meters)
     private static final double TREE_RADIUS = 0.5;
@@ -61,13 +66,16 @@ public class SimulationController {
 
             controls.setStatus("Bot is calculating shot...", Color.BLUE);
 
+            boolean robust = controls.isRobustShotEnabled();
+            String solver = controls.getSelectedSolver();
+
             switch (selectedBot) {
                 case "Hill Climbing":
-                    bot = new Hill_Climbing_Bot(dt, maxTime, controls.getSelectedSolver());
+                    bot = new Hill_Climbing_Bot(dt, maxTime, solver);
                     break;
 
                 case "Newton Raphson":
-                    bot = new Newton_Raphson_Bot(dt, maxTime, controls.getSelectedSolver());
+                    bot = new Newton_Raphson_Bot(dt, maxTime, solver);
                     break;
 
                 case "Rule Based":
@@ -86,11 +94,22 @@ public class SimulationController {
             Thread botThread = new Thread(() -> {
                 double[] velocity = bot.computeShot(currentPosition, course);
 
+                if (robust) {
+                    GolfSimulator sim = new GolfSimulator(course, solver, 0.01, 20.0);
+                    try {
+                        ShotResult test = sim.simulate(currentPosition, velocity);
+                        if (test.getOutcome() == ShotResult.Outcome.IN_TARGET) {
+                            velocity = BasinCenterer.center(sim, currentPosition, velocity[0], velocity[1]);
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                final double[] finalVelocity = velocity;
                 // bring result back to javafx and update gui
                 javafx.application.Platform.runLater(() -> {
                     controls.setBotEnabled(true);
                     controls.clearStatus();
-                    handleShot(velocity);
+                    handleShot(finalVelocity);
                 });
             });
             botThread.setDaemon(true); // thread stops when the app closes
@@ -195,17 +214,21 @@ public class SimulationController {
 
     private void handleShot(double[] velocity) {
         positionBeforeShot = currentPosition.clone();
-        controls.clearStatus(); // clears both status and position label
+        controls.clearStatus();
+
+        NoiseMode noiseMode = controls.getNoiseMode();
+        double[] firedFrom     = ShotNoise.applyToPosition(currentPosition, noiseMode, rng);
+        double[] firedVelocity = ShotNoise.applyToVelocity(velocity, noiseMode, rng);
 
         GolfSimulator sim = new GolfSimulator(course, controls.getSelectedSolver(), dt, maxTime);
-        ShotResult result = sim.simulate(currentPosition, velocity);
+        ShotResult result = sim.simulate(firedFrom, firedVelocity);
         shotCount++;
 
         controls.updateShotCount(shotCount);
         controls.setPosition(result.getFinalX(), result.getFinalY());
 
         // animate first, handle outcome after
-        renderer.animateBall(result.getPath(), () -> {
+        renderer.animateBall(result.getPath(), dt, () -> {
             handleOutcome(result);
         });
     }
@@ -234,6 +257,20 @@ public class SimulationController {
                     Color.CORNFLOWERBLUE,
                     () -> {
                         // after the message disappears, the ball resets to the location before the shot
+                        currentPosition = positionBeforeShot.clone();
+                        renderer.clearPaths();
+                        renderer.drawBall(currentPosition[0], currentPosition[1]);
+                        controls.clearStatus();
+                    }
+                );
+            }
+            case HIT_TREE -> {
+                controls.setStatus("Hit a tree!", Color.DARKGREEN);
+                renderer.drawInfoMessage(
+                    "Penalty",
+                    "Ball hit a tree :(\nReplaying from previous position.",
+                    Color.WHITE,
+                    () -> {
                         currentPosition = positionBeforeShot.clone();
                         renderer.clearPaths();
                         renderer.drawBall(currentPosition[0], currentPosition[1]);

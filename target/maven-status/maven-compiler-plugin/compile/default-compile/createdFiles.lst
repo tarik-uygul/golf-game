@@ -1,5 +1,7 @@
 bots/PathPlanner$Node.class
+model/SensitivityRanker$Candidate.class
 model/BasinCenterer$Result.class
+model/SensitivityRanker.class
 bots/PathPlanner.class
 bots/MazeBot.class
 model/ShotNoise$1.class

@@ -1,2 +1,5 @@
+bots/PathPlanner$Node.class
 model/BasinCenterer$Result.class
+bots/PathPlanner.class
+bots/MazeBot.class
 model/ShotNoise$1.class

@@ -4,6 +4,7 @@ import bots.GolfBot;
 import bots.Hill_Climbing_Bot;
 import bots.Newton_Raphson_Bot;
 import bots.RuleBasedBot;
+import bots.MazeBot;
 import io.CourseInputModuleStorage;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
@@ -81,6 +82,9 @@ public class SimulationController {
 
                 case "Rule Based":
                     bot = new RuleBasedBot(dt, maxTime);
+                    break;
+                case "MazeBot":
+                    bot = new MazeBot(dt, maxTime, solver);
                     break;
 
                 default:

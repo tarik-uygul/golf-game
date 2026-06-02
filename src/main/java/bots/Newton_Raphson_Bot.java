@@ -12,12 +12,16 @@ public class Newton_Raphson_Bot implements GolfBot {
     private final double dt;
     private final double maxTime;
     private final String solverType;
+    private int lastIterationCount = 0;
 
     public Newton_Raphson_Bot(double dt, double maxTime, String solverType) {
         this.dt = dt;
         this.maxTime = maxTime;
         this.solverType = solverType;
     }
+
+    @Override
+    public int getLastIterationCount() { return lastIterationCount; }
 
     @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
@@ -49,6 +53,7 @@ public class Newton_Raphson_Bot implements GolfBot {
             }
         }
 
+        lastIterationCount = 0;
         double vx = bestVx;
         double vy = bestVy;
         double epsilon = 0.01;
@@ -61,6 +66,7 @@ public class Newton_Raphson_Bot implements GolfBot {
         for (int restart = 0; restart <= maxRestarts; restart++) {
 
             for (int i = 0; i < maxIterations; i++) {
+                lastIterationCount++;
 
                 double[] currentLanding = simulateForPosition(simulator, currentPosition, vx, vy);
                 double errorX = currentLanding[0] - target[0];

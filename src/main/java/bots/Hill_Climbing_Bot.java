@@ -12,6 +12,7 @@ public class Hill_Climbing_Bot implements GolfBot {
     private final double dt;
     private final double maxTime;
     private final String solverType;
+    private int lastIterationCount = 0;
 
     public Hill_Climbing_Bot(double dt, double maxTime, String solverType) {
         this.dt = dt;
@@ -20,7 +21,11 @@ public class Hill_Climbing_Bot implements GolfBot {
     }
 
     @Override
+    public int getLastIterationCount() { return lastIterationCount; }
+
+    @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
+        lastIterationCount = 0;
         GolfSimulator simulator = new GolfSimulator(course, solverType, BOT_DT, BOT_MAX_TIME);
 
         double[] target = course.getTargetPosition();
@@ -91,6 +96,7 @@ public class Hill_Climbing_Bot implements GolfBot {
 
     private double evaluateShot(GolfSimulator simulator, double[] currentPosition,
                                  CourseInputModuleStorage course, double vx, double vy) {
+        lastIterationCount++;
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
             double[] finalPos = result.getFinalState();

@@ -35,6 +35,7 @@ public class SimulationController {
     private static final double MAX_DRAG_PIXELS = 150.0;
     private static final double MAX_SPEED = 5.0;
     private final Random rng = new Random();
+    private String pendingBotDiag = "";
 
     // per-type default radii in world units (meters)
     private static final double TREE_RADIUS = 0.5;
@@ -89,26 +90,56 @@ public class SimulationController {
             // disables the button while thinking so the user doesnt keep clicking
             controls.setBotEnabled(false);
             controls.setStatus("Bot is thinking...", Color.RED);
+            controls.setDiagnostics("");
 
             // run the bot on the background thread so gui doesnt freeze
             Thread botThread = new Thread(() -> {
                 double[] velocity = bot.computeShot(currentPosition, course);
+                int iterations = bot.getLastIterationCount();
+                String botName = bot.getClass().getSimpleName();
+                double[] rawVelocity = velocity.clone();
+
+                double vxLower = Double.NaN, vxUpper = Double.NaN;
+                double vyLower = Double.NaN, vyUpper = Double.NaN;
+                int basinIters = 0;
 
                 if (robust) {
                     GolfSimulator sim = new GolfSimulator(course, solver, 0.01, 20.0);
                     try {
                         ShotResult test = sim.simulate(currentPosition, velocity);
                         if (test.getOutcome() == ShotResult.Outcome.IN_TARGET) {
-                            velocity = BasinCenterer.center(sim, currentPosition, velocity[0], velocity[1]);
+                            BasinCenterer.Result basin = BasinCenterer.center(sim, currentPosition, velocity[0], velocity[1]);
+                            velocity = basin.velocity;
+                            vxLower = basin.vxLower; vxUpper = basin.vxUpper;
+                            vyLower = basin.vyLower; vyUpper = basin.vyUpper;
+                            basinIters = basin.simulationCount;
                         }
                     } catch (Exception ignored) {}
                 }
 
+                // columns: bot, bot_iters, basin_iters, raw_vx, raw_vy, center_vx, center_vy, vx_lower, vx_upper, vy_lower, vy_upper
+                System.out.printf("BOT|%s|%d|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f%n",
+                        botName, iterations, basinIters,
+                        rawVelocity[0], rawVelocity[1],
+                        velocity[0], velocity[1],
+                        vxLower, vxUpper, vyLower, vyUpper);
+
+                // build sidebar diagnostics string
+                StringBuilder diag = new StringBuilder();
+                diag.append(String.format("Iters: %d", iterations));
+                diag.append(String.format("%nRaw shot: vx=%.4f vy=%.4f", rawVelocity[0], rawVelocity[1]));
+                if (!Double.isNaN(vxLower)) {
+                    diag.append(String.format("%nBasin: %d sims", basinIters));
+                    diag.append(String.format("%nvx basin: [%.2f, %.2f]", vxLower, vxUpper));
+                    diag.append(String.format("%nvy basin: [%.2f, %.2f]", vyLower, vyUpper));
+                }
+                final String diagText = diag.toString();
                 final double[] finalVelocity = velocity;
                 // bring result back to javafx and update gui
                 javafx.application.Platform.runLater(() -> {
                     controls.setBotEnabled(true);
                     controls.clearStatus();
+                    pendingBotDiag = diagText;
                     handleShot(finalVelocity);
                 });
             });
@@ -215,10 +246,26 @@ public class SimulationController {
     private void handleShot(double[] velocity) {
         positionBeforeShot = currentPosition.clone();
         controls.clearStatus();
+        controls.setDiagnostics(pendingBotDiag);
+        pendingBotDiag = "";
 
         NoiseMode noiseMode = controls.getNoiseMode();
         double[] firedFrom     = ShotNoise.applyToPosition(currentPosition, noiseMode, rng);
         double[] firedVelocity = ShotNoise.applyToVelocity(velocity, noiseMode, rng);
+
+        double dvx = firedVelocity[0] - velocity[0];
+        double dvy = firedVelocity[1] - velocity[1];
+
+        // columns: pos_dx, pos_dy, vel_dvx, vel_dvy
+        System.out.printf("SHOT|%.4f|%.4f|%.4f|%.4f%n",
+                firedFrom[0] - currentPosition[0], firedFrom[1] - currentPosition[1],
+                dvx, dvy);
+
+        if (noiseMode != NoiseMode.NONE) {
+            String existing = controls.getDiagnostics();
+            String noiseStr = String.format("Noise: dvx=%.4f dvy=%.4f", dvx, dvy);
+            controls.setDiagnostics(existing.isEmpty() ? noiseStr : existing + "\n" + noiseStr);
+        }
 
         GolfSimulator sim = new GolfSimulator(course, controls.getSelectedSolver(), dt, maxTime);
         ShotResult result = sim.simulate(firedFrom, firedVelocity);

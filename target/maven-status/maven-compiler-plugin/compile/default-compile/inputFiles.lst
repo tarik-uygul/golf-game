@@ -1,4 +1,3 @@
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/BotCandidate.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/GolfBot.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/Hill_Climbing_Bot.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/Newton_Raphson_Bot.java
@@ -7,15 +6,11 @@
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/io/CourseInputModuleStorage.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/io/CourseInputProcessing.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/BasinCenterer.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/CourseConfiguration.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/CourseConfigurationProfile.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/CourseProfile.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/GolfSimulator.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/HeightFunction.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/NoiseMode.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/ShotNoise.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/ShotResult.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/Vector2D.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/obstacles/Obstacle.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/obstacles/Sand.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/model/obstacles/Tree.java
@@ -26,7 +21,6 @@
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/ExpressionParser.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/GolfPhysicsFunction.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/ODEFunction.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/ODESystemBuilder.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/ObstacleCollisionDetector.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/physics/RungeKutta4.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/ControlPanel.java
@@ -34,10 +28,7 @@
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/CourseRenderer.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/DifficultyMenu.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeEasyCourse.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeGUI.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeMediumCourse.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/GolfApp.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/MainMenu.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/SimulationController.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/SmallODEVisualizer.java
-/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/Visualizer.java

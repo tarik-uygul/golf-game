@@ -19,6 +19,7 @@ public class ControlPanel {
     private final Label statusLabel;
     private final Label shotCountLabel;
     private final Label positionLabel;
+    private final Label diagnosticsLabel;
     private TextField startXField;
     private TextField startYField;
     private Button botButton;
@@ -83,6 +84,10 @@ public class ControlPanel {
         positionLabel.setWrapText(true);
         positionLabel.setMaxWidth(150);
 
+        diagnosticsLabel = new Label("");
+        diagnosticsLabel.setWrapText(true);
+        diagnosticsLabel.setMaxWidth(150);
+
         // initialize the textfields for the position of the target
         double[] target = course.getTargetPosition();
         targetXField = new TextField(String.valueOf(target[0]));
@@ -120,6 +125,7 @@ public class ControlPanel {
             new Label("Noise:"), noisePicker,
             robustShotCheckBox,
             botButton,
+            diagnosticsLabel,
             new Separator(),
             resetButton,
             new Separator(),
@@ -249,6 +255,14 @@ public class ControlPanel {
         treeCountLabel.setText("Trees: " + trees);
         sandCountLabel.setText("Sand: " + sand);
         waterCountLabel.setText("Water: " + water);
+    }
+
+    public void setDiagnostics(String text) {
+        diagnosticsLabel.setText(text);
+    }
+
+    public String getDiagnostics() {
+        return diagnosticsLabel.getText();
     }
 
     public void setOnReturn(Runnable handler) {

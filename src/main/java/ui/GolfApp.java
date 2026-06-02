@@ -4,6 +4,7 @@ import io.CourseInputModuleStorage;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -87,7 +88,13 @@ public class GolfApp extends Application {
 
         renderer.drawCourse();
 
-        HBox root = new HBox(controls.getPanel(), canvasHolder);
+        ScrollPane controlScroll = new ScrollPane(controls.getPanel());
+        controlScroll.setFitToWidth(true);
+        controlScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        controlScroll.setMinWidth(CONTROL_PANEL_WIDTH + 18);
+        controlScroll.setMaxWidth(CONTROL_PANEL_WIDTH + 18);
+
+        HBox root = new HBox(controlScroll, canvasHolder);
         Scene scene = new Scene(root);
 
         canvasHolder.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {

@@ -11,11 +11,15 @@ public class RuleBasedBot implements GolfBot {
 
     private final double dt;
     private final double maxTime;
+    private int lastIterationCount = 0;
 
     public RuleBasedBot(double dt, double maxTime) {
         this.dt = dt;
         this.maxTime = maxTime;
     }
+
+    @Override
+    public int getLastIterationCount() { return lastIterationCount; }
 
     @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
@@ -26,6 +30,7 @@ public class RuleBasedBot implements GolfBot {
         double dy = target[1] - currentPosition[1];
         double baseAngle = Math.atan2(dy, dx);
 
+        lastIterationCount = 0;
         ShotChoice best = searchAround(simulator, course, currentPosition,
                 baseAngle, Math.PI / 2, ANGLE_STEPS, SPEED_STEPS, 0.8, MAX_SPEED);
 
@@ -54,6 +59,7 @@ public class RuleBasedBot implements GolfBot {
                 double vx = speed * Math.cos(angle);
                 double vy = speed * Math.sin(angle);
 
+                lastIterationCount++;
                 ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
                 if (result.getOutcome() == ShotResult.Outcome.IN_TARGET) {
                     return new ShotChoice(vx, vy, -1);

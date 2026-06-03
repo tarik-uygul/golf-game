@@ -37,6 +37,14 @@
                     <mainClass>ui.GolfApp</mainClass>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>experiment.ExperimentRunner</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

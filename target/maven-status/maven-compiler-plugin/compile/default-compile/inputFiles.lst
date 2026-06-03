@@ -4,6 +4,7 @@
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/Newton_Raphson_Bot.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/PathPlanner.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/bots/RuleBasedBot.java
+/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/experiment/ExperimentRunner.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/io/CourseInputModule.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/io/CourseInputModuleStorage.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/io/CourseInputProcessing.java
@@ -31,6 +32,7 @@
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/CourseRenderer.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/DifficultyMenu.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeEasyCourse.java
+/Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeHardCourse.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/FakeMediumCourse.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/GolfApp.java
 /Users/nico/Desktop/project 1.2 new/team_02/src/main/java/ui/MainMenu.java

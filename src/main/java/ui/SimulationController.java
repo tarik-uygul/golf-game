@@ -108,6 +108,9 @@ public class SimulationController {
 
                 double vxLower = Double.NaN, vxUpper = Double.NaN;
                 double vyLower = Double.NaN, vyUpper = Double.NaN;
+                double rxLower = Double.NaN, rxUpper = Double.NaN;
+                double ryLower = Double.NaN, ryUpper = Double.NaN;
+                boolean usedRealBasin = false;
                 int basinIters = 0;
 
                 if (robust) {
@@ -132,6 +135,9 @@ public class SimulationController {
                             }
                             vxLower = basin.vxLower; vxUpper = basin.vxUpper;
                             vyLower = basin.vyLower; vyUpper = basin.vyUpper;
+                            rxLower = basin.rxLower; rxUpper = basin.rxUpper;
+                            ryLower = basin.ryLower; ryUpper = basin.ryUpper;
+                            usedRealBasin = basin.usedRealBasin;
                             basinIters = basin.simulationCount;
                         }
                     } catch (Exception ignored) {}
@@ -150,9 +156,14 @@ public class SimulationController {
                 diag.append(String.format("%nRaw:   vx=%.3f vy=%.3f", rawVelocity[0], rawVelocity[1]));
                 diag.append(String.format("%nFired: vx=%.3f vy=%.3f", velocity[0], velocity[1]));
                 if (!Double.isNaN(vxLower)) {
-                    diag.append(String.format("%nBasin(%d sims):", basinIters));
+                    diag.append(String.format("%nVel Basin(%d sims):", basinIters));
                     diag.append(String.format("%n  vx [%.3f, %.3f]", vxLower, vxUpper));
                     diag.append(String.format("%n  vy [%.3f, %.3f]", vyLower, vyUpper));
+                }
+                if (!Double.isNaN(rxLower)) {
+                    diag.append(String.format("%nReal Basin:"));
+                    diag.append(String.format("%n  vx [%.3f, %.3f]", rxLower, rxUpper));
+                    diag.append(String.format("%n  vy [%.3f, %.3f]", ryLower, ryUpper));
                 }
                 final String diagText = diag.toString();
                 final double[] finalVelocity = velocity;
@@ -296,7 +307,8 @@ public class SimulationController {
         controls.setPosition(result.getFinalX(), result.getFinalY());
 
         // animate first, handle outcome after
-        renderer.animateBall(result.getPath(), dt, () -> {
+        boolean scored = result.getOutcome() == ShotResult.Outcome.IN_TARGET;
+        renderer.animateBall(result.getPath(), dt, scored, () -> {
             handleOutcome(result);
         });
     }

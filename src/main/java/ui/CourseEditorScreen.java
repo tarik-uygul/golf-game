@@ -48,8 +48,8 @@ public class CourseEditorScreen {
         StackPane canvasHolder = new StackPane(canvas);
         HBox.setHgrow(canvasHolder, Priority.ALWAYS);
 
-        //side panel
-        VBox sidePanel = buildSidePanel(app);
+        //side panel wrapped in a scroll pane so it works on small screens
+        ScrollPane sidePanel = buildSidePanel(app);
 
         layout = new HBox(sidePanel, canvasHolder);
 
@@ -100,7 +100,7 @@ public class CourseEditorScreen {
         renderer.drawCourse();
     }
 
-    private VBox buildSidePanel(GolfApp app) {
+    private ScrollPane buildSidePanel(GolfApp app) {
 
         //obstacle type
         ComboBox<String> typePicker = new ComboBox<>();
@@ -220,9 +220,14 @@ public class CourseEditorScreen {
                 statusLabel
         );
         panel.setPadding(new Insets(10));
-        panel.setMinWidth(200);
-        panel.setMaxWidth(200);  // add this line
-        return panel;
+        panel.setMinWidth(180);
+
+        ScrollPane scroll = new ScrollPane(panel);
+        scroll.setFitToWidth(true);
+        scroll.setMinWidth(200);
+        scroll.setMaxWidth(200);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scroll;
     }
     private void parseSandFriction(TextField muKField, TextField muSField) {
         try {

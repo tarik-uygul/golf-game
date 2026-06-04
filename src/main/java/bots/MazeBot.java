@@ -20,50 +20,46 @@ public class MazeBot implements GolfBot {
 
     @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
-        // 1. Plan path if we don't have one
+        // 1. Generate path from A* if empty
         if (plannedPath == null) {
-            System.out.println("Planning new path...");
+            System.out.println("MazeBot: Planning new path around obstacles...");
             plannedPath = planPath(currentPosition, course.getTargetPosition(), course);
             currentPathIndex = 1;
-            System.out.println("Planned path: " + plannedPath.size() + " steps");
+            System.out.println("MazeBot: Path found with " + plannedPath.size() + " waypoints.");
         }
 
-       // 2. Find the FURTHEST visible waypoint on the remaining path
+        // Auto-advance checking: if we are already close enough to the active checkpoint, pop to next
+        while (currentPathIndex < plannedPath.size() - 1) {
+            double[] wp = plannedPath.get(currentPathIndex);
+            double distToWp = Math.hypot(wp[0] - currentPosition[0], wp[1] - currentPosition[1]);
+            if (distToWp < 0.6) {
+                currentPathIndex++;
+            } else {
+                break;
+            }
+        }
+
+       // 2. Lookahead scanner: Find furthest visible waypoint on remaining path
         int furthestVisibleIndex = currentPathIndex;
         for (int i = plannedPath.size() - 1; i >= currentPathIndex; i--) {
-            if (isLineOfSightClear(currentPosition, plannedPath.get(i), course)) {
+            double[] wp = plannedPath.get(i);
+            double distToWp = Math.hypot(wp[0] - currentPosition[0], wp[1] - currentPosition[1]);
+            
+            // FIX 4: Look-ahead distance cap. Stops the bot from taking crazy shortcuts across the map
+            if (i != plannedPath.size() - 1 && distToWp > 4.0) {
+                continue;
+            }
+
+            if (isLineOfSightClear(currentPosition, wp, course)) {
                 furthestVisibleIndex = i;
                 break;
             }
         }
         
-        // Update our official progress
         currentPathIndex = furthestVisibleIndex;
         double[] currentTarget = plannedPath.get(currentPathIndex);
 
-        // 3. The "Peek Around the Corner" Fix
-        // If we are extremely close to our target waypoint but STILL can't see the next one,
-        // we are trapped on the corner. We project our target 1.5m towards the next waypoint
-        // to force the bot to hit a firm shot around the bend.
-        if (currentPathIndex < plannedPath.size() - 1) {
-            double distanceToTarget = Math.hypot(currentTarget[0] - currentPosition[0], currentTarget[1] - currentPosition[1]);
-            
-            if (distanceToTarget < 0.5) {
-                double[] nextWaypoint = plannedPath.get(currentPathIndex + 1);
-                double dx = nextWaypoint[0] - currentPosition[0];
-                double dy = nextWaypoint[1] - currentPosition[1];
-                double angleToNext = Math.atan2(dy, dx);
-                
-                // Nudge the temporary target 1.5 meters around the corner
-                currentTarget = new double[] {
-                    currentPosition[0] + 1.5 * Math.cos(angleToNext),
-                    currentPosition[1] + 1.5 * Math.sin(angleToNext)
-                };
-            }
-        }
-
-        // 4. Create the Fake Course
-        // Use the actual strict target radius for the final hole, but be loose (0.4m) on intermediate waypoints
+        // 3. Setup Fake Course Container to isolate intermediate waypoint targets
         double fakeTolerance = (currentPathIndex == plannedPath.size() - 1) ? course.getTargetRadius() : 0.4;
 
         CourseInputModuleStorage fakeCourse = new CourseInputModuleStorage(
@@ -80,31 +76,42 @@ public class MazeBot implements GolfBot {
             }
         }
 
-        Newton_Raphson_Bot newtonBot = new Newton_Raphson_Bot(dt, maxTime, solverType);
-        return newtonBot.computeShot(currentPosition, fakeCourse);
+        // FIX 5: Full integration with Hill Climbing Engine
+        System.out.println("MazeBot: Firing Hill-Climbing towards checkpoint index " + currentPathIndex);
+        Hill_Climbing_Bot hcBot = new Hill_Climbing_Bot(dt, maxTime, solverType);
+        return hcBot.computeShot(currentPosition, fakeCourse);
     }
 
-    // Casts a "ray" from the ball to the target to see if we can shoot straight there
     private boolean isLineOfSightClear(double[] start, double[] end, CourseInputModuleStorage course) {
         double dist = Math.hypot(end[0] - start[0], end[1] - start[1]);
-        int steps = (int) Math.ceil(dist / 0.2); // Check every 20cm along the line
+        int steps = (int) Math.ceil(dist / 0.1); // High-density check step (every 10cm)
 
         for (int i = 1; i <= steps; i++) {
             double t = (double) i / steps;
             double x = start[0] + t * (end[0] - start[0]);
             double y = start[1] + t * (end[1] - start[1]);
 
-            // Check if this spot is in water (negative height)
+            // FIX 6: Explicit map boundary checks with a 35cm Wall Buffer!
+            if (x < 0.35 || x > course.getCourseWidth() - 0.35 || y < 0.35 || y > course.getCourseHeight() - 0.35) {
+                return false;
+            }
+
+            // Check math function water levels
             if (course.getHeight(x, y) < 0) return false;
 
-            // Check if this spot hits a placed obstacle
+            // FIX 7: Thick Laser Raycasting. Adds a 35cm safety radius buffer around trees
+            // to stop the path scanner from picking a path that dangerously grazes an edge.
             if (course.getObstacles() != null) {
                 for (model.obstacles.Obstacle o : course.getObstacles()) {
-                    if (o.contains(x, y)) return false;
+                    double dx = x - o.getX();
+                    double dy = y - o.getY();
+                    if (Math.hypot(dx, dy) < o.getRadius() + 0.35) {
+                        return false; 
+                    }
                 }
             }
         }
-        return true; // The path is totally clear!
+        return true; 
     }
 
     private List<double[]> planPath(double[] start, double[] target, CourseInputModuleStorage course) {

@@ -4,10 +4,12 @@ import bots.GolfBot;
 import bots.Hill_Climbing_Bot;
 import bots.Newton_Raphson_Bot;
 import bots.RuleBasedBot;
+import bots.MazeBot;
 import io.CourseInputModuleStorage;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import model.BasinCenterer;
+import model.SensitivityRanker;
 import model.GolfSimulator;
 import model.NoiseMode;
 import model.ShotNoise;
@@ -17,6 +19,7 @@ import model.obstacles.Sand;
 import model.obstacles.Tree;
 import model.obstacles.Water;
 import ui.ControlPanel.PlacementMode;
+import java.util.List;
 import java.util.Random;
 
 public class SimulationController {
@@ -69,6 +72,7 @@ public class SimulationController {
 
             boolean robust = controls.isRobustShotEnabled();
             String solver = controls.getSelectedSolver();
+            NoiseMode robustNoiseMode = controls.getNoiseMode();
 
             switch (selectedBot) {
                 case "Hill Climbing":
@@ -81,6 +85,9 @@ public class SimulationController {
 
                 case "Rule Based":
                     bot = new RuleBasedBot(dt, maxTime);
+                    break;
+                case "MazeBot":
+                    bot = new MazeBot(solver, dt, maxTime);
                     break;
 
                 default:
@@ -101,17 +108,36 @@ public class SimulationController {
 
                 double vxLower = Double.NaN, vxUpper = Double.NaN;
                 double vyLower = Double.NaN, vyUpper = Double.NaN;
+                double rxLower = Double.NaN, rxUpper = Double.NaN;
+                double ryLower = Double.NaN, ryUpper = Double.NaN;
+                boolean usedRealBasin = false;
                 int basinIters = 0;
 
                 if (robust) {
-                    GolfSimulator sim = new GolfSimulator(course, solver, 0.01, 20.0);
+                    double pipelineDt = Math.max(dt, 0.05); // coarser dt only for the fast grid scan
+                    GolfSimulator scanSim = new GolfSimulator(course, solver, pipelineDt, maxTime);
+                    GolfSimulator realSim = new GolfSimulator(course, solver, dt, maxTime);
                     try {
-                        ShotResult test = sim.simulate(currentPosition, velocity);
+                        // Step 1 & 2: fast grid scan with coarse dt to find candidates
+                        List<SensitivityRanker.Candidate> candidates =
+                                SensitivityRanker.rankCandidates(scanSim, currentPosition, velocity[0], velocity[1], course.getTargetPosition());
+                        if (!candidates.isEmpty()) {
+                            SensitivityRanker.Candidate best = candidates.get(0);
+                            velocity = new double[]{best.vx, best.vy};
+                        }
+                        // Step 3: verify candidate and find basin using real dt so obstacles are detected properly
+                        ShotResult test = realSim.simulate(currentPosition, velocity);
                         if (test.getOutcome() == ShotResult.Outcome.IN_TARGET) {
-                            BasinCenterer.Result basin = BasinCenterer.center(sim, currentPosition, velocity[0], velocity[1]);
-                            velocity = basin.velocity;
+                            BasinCenterer.Result basin = BasinCenterer.center(realSim, currentPosition, velocity[0], velocity[1], robustNoiseMode);
+                            ShotResult verify = realSim.simulate(currentPosition, basin.velocity);
+                            if (verify.getOutcome() == ShotResult.Outcome.IN_TARGET) {
+                                velocity = basin.velocity;
+                            }
                             vxLower = basin.vxLower; vxUpper = basin.vxUpper;
                             vyLower = basin.vyLower; vyUpper = basin.vyUpper;
+                            rxLower = basin.rxLower; rxUpper = basin.rxUpper;
+                            ryLower = basin.ryLower; ryUpper = basin.ryUpper;
+                            usedRealBasin = basin.usedRealBasin;
                             basinIters = basin.simulationCount;
                         }
                     } catch (Exception ignored) {}
@@ -127,11 +153,17 @@ public class SimulationController {
                 // build sidebar diagnostics string
                 StringBuilder diag = new StringBuilder();
                 diag.append(String.format("Iters: %d", iterations));
-                diag.append(String.format("%nRaw shot: vx=%.4f vy=%.4f", rawVelocity[0], rawVelocity[1]));
+                diag.append(String.format("%nRaw:   vx=%.3f vy=%.3f", rawVelocity[0], rawVelocity[1]));
+                diag.append(String.format("%nFired: vx=%.3f vy=%.3f", velocity[0], velocity[1]));
                 if (!Double.isNaN(vxLower)) {
-                    diag.append(String.format("%nBasin: %d sims", basinIters));
-                    diag.append(String.format("%nvx basin: [%.2f, %.2f]", vxLower, vxUpper));
-                    diag.append(String.format("%nvy basin: [%.2f, %.2f]", vyLower, vyUpper));
+                    diag.append(String.format("%nVel Basin(%d sims):", basinIters));
+                    diag.append(String.format("%n  vx [%.3f, %.3f]", vxLower, vxUpper));
+                    diag.append(String.format("%n  vy [%.3f, %.3f]", vyLower, vyUpper));
+                }
+                if (!Double.isNaN(rxLower)) {
+                    diag.append(String.format("%nReal Basin:"));
+                    diag.append(String.format("%n  vx [%.3f, %.3f]", rxLower, rxUpper));
+                    diag.append(String.format("%n  vy [%.3f, %.3f]", ryLower, ryUpper));
                 }
                 final String diagText = diag.toString();
                 final double[] finalVelocity = velocity;
@@ -256,15 +288,15 @@ public class SimulationController {
         double dvx = firedVelocity[0] - velocity[0];
         double dvy = firedVelocity[1] - velocity[1];
 
-        // columns: pos_dx, pos_dy, vel_dvx, vel_dvy
         System.out.printf("SHOT|%.4f|%.4f|%.4f|%.4f%n",
                 firedFrom[0] - currentPosition[0], firedFrom[1] - currentPosition[1],
                 dvx, dvy);
 
+        // append noise to whatever the bot diagnostics already set
         if (noiseMode != NoiseMode.NONE) {
-            String existing = controls.getDiagnostics();
-            String noiseStr = String.format("Noise: dvx=%.4f dvy=%.4f", dvx, dvy);
-            controls.setDiagnostics(existing.isEmpty() ? noiseStr : existing + "\n" + noiseStr);
+            String base = controls.getDiagnostics();
+            String noiseStr = String.format("Noise dvx=%.3f dvy=%.3f", dvx, dvy);
+            controls.setDiagnostics(base.isEmpty() ? noiseStr : base + "\n" + noiseStr);
         }
 
         GolfSimulator sim = new GolfSimulator(course, controls.getSelectedSolver(), dt, maxTime);
@@ -275,7 +307,8 @@ public class SimulationController {
         controls.setPosition(result.getFinalX(), result.getFinalY());
 
         // animate first, handle outcome after
-        renderer.animateBall(result.getPath(), dt, () -> {
+        boolean scored = result.getOutcome() == ShotResult.Outcome.IN_TARGET;
+        renderer.animateBall(result.getPath(), dt, scored, () -> {
             handleOutcome(result);
         });
     }

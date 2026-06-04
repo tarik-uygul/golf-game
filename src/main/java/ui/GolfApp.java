@@ -56,7 +56,7 @@ public class GolfApp extends Application {
             CourseInputModuleStorage course = switch (difficulty) {
                 case "Easy"   -> FakeEasyCourse.build();
                 case "Medium" -> FakeMediumCourse.build();
-                case "Hard"   -> FakeEasyCourse.build(); // replace later
+                case "Hard"   -> FakeHardCourse.build();
                 default -> throw new IllegalArgumentException("Invalid difficulty");
             };
             CourseEditorScreen editor = new CourseEditorScreen(this, course);
@@ -114,7 +114,7 @@ public class GolfApp extends Application {
             CourseInputModuleStorage course = switch (difficulty) {
                 case "Easy"   -> FakeEasyCourse.build();
                 case "Medium" -> FakeMediumCourse.build();
-                case "Hard"   -> FakeEasyCourse.build(); // change to hard
+                case "Hard"   -> FakeHardCourse.build();
                 default -> throw new IllegalArgumentException("Invalid difficulty");
             };
             startGameWithCourse(course);

@@ -35,7 +35,7 @@ public class SimulationController {
     private GolfBot bot = null;
     private boolean isDragging = false;
     private double dragStartPixelX, dragStartPixelY;
-    private static final double MAX_DRAG_PIXELS = 150.0;
+    private static final double MAX_DRAG_PIXELS = 75.0;
     private static final double MAX_SPEED = 5.0;
     private final Random rng = new Random();
     private String pendingBotDiag = "";
@@ -236,21 +236,19 @@ public class SimulationController {
             double dy = event.getY() - dragStartPixelY;
             double dragLength = Math.sqrt(dx*dx + dy*dy);
 
-            // set a max to the length of the arrow
-            double maxArrowPixels = 50.0;
             double clampedX;
             double clampedY;
-            if (dragLength > maxArrowPixels) {
+            if (dragLength > MAX_DRAG_PIXELS) {
                 // keep direction but limit length
                 double angle = Math.atan2(dy, dx);
-                clampedX = dragStartPixelX + maxArrowPixels * Math.cos(angle);
-                clampedY = dragStartPixelY + maxArrowPixels * Math.sin(angle);
+                clampedX = dragStartPixelX + MAX_DRAG_PIXELS * Math.cos(angle);
+                clampedY = dragStartPixelY + MAX_DRAG_PIXELS * Math.sin(angle);
             } else {
                 clampedX = event.getX();
                 clampedY = event.getY();
             }
 
-            renderer.drawArrow(dragStartPixelX, dragStartPixelY, clampedX, clampedY, dragLength, maxArrowPixels);
+            renderer.drawArrow(dragStartPixelX, dragStartPixelY, clampedX, clampedY, dragLength, MAX_DRAG_PIXELS);
         });
 
         renderer.getCanvas().setOnMouseReleased(event -> {

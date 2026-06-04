@@ -16,11 +16,11 @@ public class DifficultyMenu {
     public DifficultyMenu(GolfApp app, boolean editorMode) {
 
         // title
-        Text title = new Text("SELECT DIFFICULTY");
+        Text title = new Text(editorMode ? "CREATE YOUR OWN COURSE" : "PLAY!");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 38));
         title.setFill(Color.WHITE);
 
-        Text subtitle = new Text("Choose your difficulty");
+        Text subtitle = new Text(editorMode ? "Design the perfect challenge!" : "Choose your difficulty");
         subtitle.setFont(Font.font("Arial", FontWeight.NORMAL, 16));
         subtitle.setFill(Color.color(1, 1, 1, 0.70));
 

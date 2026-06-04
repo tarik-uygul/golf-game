@@ -2,6 +2,7 @@ package ui;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import java.util.List;
 
@@ -10,7 +11,6 @@ import model.obstacles.Water;
 import model.obstacles.Sand;
 import model.obstacles.Tree;
 import io.CourseInputModuleStorage;
-import model.obstacles.Obstacle;
 import model.obstacles.Sand;
 import model.obstacles.Tree;
 import model.obstacles.Water;
@@ -35,6 +35,9 @@ public class CourseRenderer {
 
     // resolution of the terrain (more is nicer but slower)
     private static final int gridResolution = 100;
+
+    // cached terrain image — rebuilt only when course or canvas size changes
+    private WritableImage terrainCache = null;
 
     //ghost preview of where the obstacles will be placed
     private double ghostX = -1;
@@ -64,40 +67,48 @@ public class CourseRenderer {
     } // flip y axis
 
     public void drawCourse() {
-        double w = course.getCourseWidth();
-        double h = course.getCourseHeight();
-        double cellW = canvas.getWidth() / gridResolution;
-        double cellH = canvas.getHeight() / gridResolution;
-
-        // look at the heights across the whole course first so we know the full range for color scaling
-        double minH = Double.MAX_VALUE;
-        double maxH = -Double.MAX_VALUE;
-        double[][] heights = new double[gridResolution][gridResolution];
-        for (int i = 0; i < gridResolution; i++) {
-            for (int j = 0; j < gridResolution; j++) {
-                double height = course.getHeight(
-                        i * w / gridResolution,
-                        j * h / gridResolution);
-                heights[i][j] = height;
-                if (height < minH)
-                    minH = height;
-                if (height > maxH)
-                    maxH = height;
-            }
+        if (terrainCache == null) {
+            terrainCache = buildTerrainCache();
         }
-
-        // draw each cell with a color based on its height relative to the course's
-        // min/max
-        for (int i = 0; i < gridResolution; i++) {
-            for (int j = 0; j < gridResolution; j++) {
-                gc.setFill(heightToColor(heights[i][j], minH, maxH));
-                gc.fillRect(i * cellW, canvas.getHeight() - (j + 1) * cellH, cellW, cellH);
-            }
-        }
-
+        gc.drawImage(terrainCache, 0, 0);
         drawObstacles();
         drawTarget();
         drawStartPosition();
+    }
+
+    private WritableImage buildTerrainCache() {
+        int W = (int) canvas.getWidth();
+        int H = (int) canvas.getHeight();
+        double cw = course.getCourseWidth();
+        double ch = course.getCourseHeight();
+
+        double minH = Double.MAX_VALUE, maxH = -Double.MAX_VALUE;
+        double[][] heights = new double[gridResolution][gridResolution];
+        for (int i = 0; i < gridResolution; i++) {
+            for (int j = 0; j < gridResolution; j++) {
+                heights[i][j] = course.getHeight(i * cw / gridResolution, j * ch / gridResolution);
+                if (heights[i][j] < minH) minH = heights[i][j];
+                if (heights[i][j] > maxH) maxH = heights[i][j];
+            }
+        }
+
+        int[] pixels = new int[W * H];
+        for (int px = 0; px < W; px++) {
+            int gi = Math.min((int)(px * gridResolution / W), gridResolution - 1);
+            for (int py = 0; py < H; py++) {
+                int gj = Math.min((int)((H - 1 - py) * gridResolution / H), gridResolution - 1);
+                Color c = heightToColor(heights[gi][gj], minH, maxH);
+                pixels[py * W + px] = (0xFF << 24)
+                        | ((int)(c.getRed()   * 255) << 16)
+                        | ((int)(c.getGreen() * 255) << 8)
+                        |  (int)(c.getBlue()  * 255);
+            }
+        }
+
+        WritableImage img = new WritableImage(W, H);
+        img.getPixelWriter().setPixels(0, 0, W, H,
+                javafx.scene.image.PixelFormat.getIntArgbInstance(), pixels, 0, W);
+        return img;
     }
 
     // hit-test in world coordinates — returns the topmost (last-drawn) obstacle under the point, or null
@@ -228,35 +239,39 @@ public class CourseRenderer {
         gc.fillPolygon(new double[]{toX, x1, x2}, new double[]{toY, y1, y2}, 3);
     }
 
-    public void animateBall(List<double[]> path, Runnable onFinished) {
+    public void animateBall(List<double[]> path, double dt, boolean scored, Runnable onFinished) {
         if (ballAnimation != null) ballAnimation.stop();
 
         animationPath = path;
         animationStep = 0;
 
-        int totalSteps = path.size();
-        int stepsPerFrame = Math.max(1, totalSteps / 1000);
+        // Constant playback speed: advance ~1.5x real-time regardless of shot length.
+        // stepsPerFrame = playbackMultiplier / (framesPerSecond * dt)
+        int stepsPerFrame = Math.max(1, (int)(1.5 / (60.0 * dt)));
 
         ballAnimation = new javafx.animation.AnimationTimer() {
             @Override
             public void handle(long now) {
                 if (animationStep >= animationPath.size()) {
                     stop();
+                    double[] finalPos = animationPath.get(animationPath.size() - 1);
+                    drawCourse();
+                    drawBall(finalPos[0], finalPos[1]);
                     if (onFinished != null) onFinished.run();
                     return;
                 }
 
                 double[] pos = animationPath.get(animationStep);
 
-                // stop early if ball has essentially stopped moving
-                // instead of waiting for all remaining steps to play out
-                if (animationStep > 0) {
+                // stop early if ball has essentially stopped — but never skip to the end
+                // on a scored shot, since that would hide the ball entering the hole
+                if (!scored && animationStep > 0) {
                     double[] prev = animationPath.get(animationStep - stepsPerFrame < 0
                         ? 0 : animationStep - stepsPerFrame);
                     double dx = pos[0] - prev[0];
                     double dy = pos[1] - prev[1];
                     double distanceMoved = Math.sqrt(dx*dx + dy*dy);
-                    if (distanceMoved < 0.001) { // less than 1mm per frame = effectively stopped
+                    if (distanceMoved < 0.001 * stepsPerFrame) {
                         stop();
                         drawCourse();
                         drawBall(pos[0], pos[1]);
@@ -293,6 +308,7 @@ public class CourseRenderer {
 
     public void updateCourse(CourseInputModuleStorage course2) {
         this.course = course2;
+        terrainCache = null;
     }
 
     public void clearPaths() {
@@ -354,8 +370,8 @@ public class CourseRenderer {
         this.course = course;
         canvas.setWidth(newWidth);
         canvas.setHeight(newHeight);
-        // Recalculate scale based on new canvas dimensions
         this.scaleX = newWidth  / course.getCourseWidth();
         this.scaleY = newHeight / course.getCourseHeight();
+        terrainCache = null;
     }
 }

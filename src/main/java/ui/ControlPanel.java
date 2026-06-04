@@ -5,17 +5,21 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import io.CourseInputModuleStorage;
+import model.NoiseMode;
 
 public class ControlPanel {
 
     private final VBox panel;
     private final ComboBox<String> solverPicker;
     private final ComboBox<String> botPicker;
+    private final ComboBox<String> noisePicker;
+    private final CheckBox robustShotCheckBox;
     private final Button resetButton;
     private final Button returnButton;
     private final Label statusLabel;
     private final Label shotCountLabel;
     private final Label positionLabel;
+    private final Label diagnosticsLabel;
     private TextField startXField;
     private TextField startYField;
     private Button botButton;
@@ -49,9 +53,16 @@ public class ControlPanel {
         solverPicker.setMaxWidth(150);
 
         botPicker = new ComboBox<>();
-        botPicker.getItems().addAll("Rule Based", "Hill Climbing", "Newton Raphson", "Maze Bot");
+        botPicker.getItems().addAll("Rule Based", "Hill Climbing", "Newton Raphson", "MazeBot");
         botPicker.setValue("Newton Raphson");
         botPicker.setMaxWidth(150);
+
+        noisePicker = new ComboBox<>();
+        noisePicker.getItems().addAll("None", "Gaussian (Realistic)", "Small", "Medium", "Large");
+        noisePicker.setValue("None");
+        noisePicker.setMaxWidth(150);
+
+        robustShotCheckBox = new CheckBox("Robust shot");
 
         resetButton = new Button("Reset");
         botButton = new Button("Bot shot");
@@ -72,6 +83,10 @@ public class ControlPanel {
         positionLabel = new Label("");
         positionLabel.setWrapText(true);
         positionLabel.setMaxWidth(150);
+
+        diagnosticsLabel = new Label("");
+        diagnosticsLabel.setWrapText(true);
+        diagnosticsLabel.setMaxWidth(150);
 
         // initialize the textfields for the position of the target
         double[] target = course.getTargetPosition();
@@ -106,13 +121,11 @@ public class ControlPanel {
         panel = new VBox(10,
             new Label("Solver:"), solverPicker,
             new Separator(),
-            new Label("Bot button:"), botPicker,
+            new Label("Bot:"), botPicker,
+            new Label("Noise:"), noisePicker,
+            robustShotCheckBox,
             botButton,
-            new Separator(),
-            new Label("Obstacles:"),
-            new HBox(5, offToggle, treeToggle, sandToggle, waterToggle),
-            treeCountLabel, sandCountLabel, waterCountLabel,
-            clearObstaclesButton,
+            diagnosticsLabel,
             new Separator(),
             resetButton,
             new Separator(),
@@ -212,6 +225,20 @@ public class ControlPanel {
         return botPicker.getValue();
     }
 
+    public boolean isRobustShotEnabled() {
+        return robustShotCheckBox.isSelected();
+    }
+
+    public NoiseMode getNoiseMode() {
+        switch (noisePicker.getValue()) {
+            case "Gaussian (Realistic)": return NoiseMode.GAUSSIAN;
+            case "Small":               return NoiseMode.SMALL;
+            case "Medium":              return NoiseMode.MEDIUM;
+            case "Large":               return NoiseMode.LARGE;
+            default:                    return NoiseMode.NONE;
+        }
+    }
+
     // current placement mode based on which toggle is active
     public PlacementMode getPlacementMode() {
         if (treeToggle.isSelected()) return PlacementMode.TREE;
@@ -228,6 +255,14 @@ public class ControlPanel {
         treeCountLabel.setText("Trees: " + trees);
         sandCountLabel.setText("Sand: " + sand);
         waterCountLabel.setText("Water: " + water);
+    }
+
+    public void setDiagnostics(String text) {
+        diagnosticsLabel.setText(text);
+    }
+
+    public String getDiagnostics() {
+        return diagnosticsLabel.getText();
     }
 
     public void setOnReturn(Runnable handler) {

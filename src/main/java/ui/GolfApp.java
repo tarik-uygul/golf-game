@@ -4,6 +4,7 @@ import io.CourseInputModuleStorage;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -54,8 +55,8 @@ public class GolfApp extends Application {
         try {
             CourseInputModuleStorage course = switch (difficulty) {
                 case "Easy"   -> FakeEasyCourse.build();
-                case "Medium" -> FakeEasyCourse.build(); // replace later
-                case "Hard"   -> FakeEasyCourse.build(); // replace later
+                case "Medium" -> FakeMediumCourse.build();
+                case "Hard"   -> FakeHardCourse.build();
                 default -> throw new IllegalArgumentException("Invalid difficulty");
             };
             CourseEditorScreen editor = new CourseEditorScreen(this, course);
@@ -87,7 +88,13 @@ public class GolfApp extends Application {
 
         renderer.drawCourse();
 
-        HBox root = new HBox(controls.getPanel(), canvasHolder);
+        ScrollPane controlScroll = new ScrollPane(controls.getPanel());
+        controlScroll.setFitToWidth(true);
+        controlScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        controlScroll.setMinWidth(CONTROL_PANEL_WIDTH + 18);
+        controlScroll.setMaxWidth(CONTROL_PANEL_WIDTH + 18);
+
+        HBox root = new HBox(controlScroll, canvasHolder);
         Scene scene = new Scene(root);
 
         canvasHolder.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -106,8 +113,8 @@ public class GolfApp extends Application {
         try {
             CourseInputModuleStorage course = switch (difficulty) {
                 case "Easy"   -> FakeEasyCourse.build();
-                case "Medium" -> FakeEasyCourse.build(); // change to medium
-                case "Hard"   -> FakeEasyCourse.build(); // change to hard
+                case "Medium" -> FakeMediumCourse.build();
+                case "Hard"   -> FakeHardCourse.build();
                 default -> throw new IllegalArgumentException("Invalid difficulty");
             };
             startGameWithCourse(course);

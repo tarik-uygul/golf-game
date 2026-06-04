@@ -8,9 +8,11 @@ public class GolfPhysicsFunction implements ODEFunction {
 
     private static final double G = 9.81;
     private final CourseInputModuleStorage course;
+    private final CollisionDetector detector;
 
-    public GolfPhysicsFunction(CourseInputModuleStorage course) {
+    public GolfPhysicsFunction(CourseInputModuleStorage course, CollisionDetector detector) {
         this.course = course;
+        this.detector = detector;
     }
 
     @Override
@@ -22,7 +24,8 @@ public class GolfPhysicsFunction implements ODEFunction {
 
         double dhdx = course.getSlopeX(x, y);
         double dhdy = course.getSlopeY(x, y);
-        double muK = course.getKineticFriction();
+        double[] friction = detector.getSurfaceFriction(x, y);
+        double muK = friction[0];
         double speed = Math.sqrt(vx * vx + vy * vy);
 
         double ax, ay;
@@ -30,7 +33,7 @@ public class GolfPhysicsFunction implements ODEFunction {
         if (speed < 1e-6) {
             // ball nearly stopped — friction term has zero denominator, skip it
             // if slope overcomes static friction, ball starts sliding in slope direction
-            double muS = course.getStaticFriction();
+            double muS = friction[1];
             double slopeNorm = Math.sqrt(dhdx * dhdx + dhdy * dhdy);
             if (slopeNorm > muS) {
                 // slides: friction opposes slope direction

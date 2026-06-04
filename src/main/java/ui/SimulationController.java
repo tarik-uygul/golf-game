@@ -4,16 +4,23 @@ import bots.GolfBot;
 import bots.Hill_Climbing_Bot;
 import bots.Newton_Raphson_Bot;
 import bots.RuleBasedBot;
+import bots.MazeBot;
 import io.CourseInputModuleStorage;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
+import model.BasinCenterer;
+import model.SensitivityRanker;
 import model.GolfSimulator;
+import model.NoiseMode;
+import model.ShotNoise;
 import model.ShotResult;
 import model.obstacles.Obstacle;
 import model.obstacles.Sand;
 import model.obstacles.Tree;
 import model.obstacles.Water;
 import ui.ControlPanel.PlacementMode;
+import java.util.List;
+import java.util.Random;
 
 public class SimulationController {
 
@@ -30,6 +37,8 @@ public class SimulationController {
     private double dragStartPixelX, dragStartPixelY;
     private static final double MAX_DRAG_PIXELS = 150.0;
     private static final double MAX_SPEED = 5.0;
+    private final Random rng = new Random();
+    private String pendingBotDiag = "";
 
     // per-type default radii in world units (meters)
     private static final double TREE_RADIUS = 0.5;
@@ -61,21 +70,25 @@ public class SimulationController {
 
             controls.setStatus("Bot is calculating shot...", Color.BLUE);
 
+            boolean robust = controls.isRobustShotEnabled();
+            String solver = controls.getSelectedSolver();
+            NoiseMode robustNoiseMode = controls.getNoiseMode();
+
             switch (selectedBot) {
                 case "Hill Climbing":
-                    bot = new Hill_Climbing_Bot(dt, maxTime, controls.getSelectedSolver());
+                    bot = new Hill_Climbing_Bot(dt, maxTime, solver);
                     break;
 
                 case "Newton Raphson":
-                    bot = new Newton_Raphson_Bot(dt, maxTime, controls.getSelectedSolver());
+                    bot = new Newton_Raphson_Bot(dt, maxTime, solver);
                     break;
 
                 case "Rule Based":
                     bot = new RuleBasedBot(dt, maxTime);
                     break;
-                case "Maze Bot":
-                    bot = new bots.MazeBot(controls.getSelectedSolver(), dt, maxTime);
-                        break;
+                case "MazeBot":
+                    bot = new MazeBot(solver, dt, maxTime);
+                    break;
 
                 default:
                     controls.setStatus("No bot loaded.", Color.RED);
@@ -84,16 +97,82 @@ public class SimulationController {
             // disables the button while thinking so the user doesnt keep clicking
             controls.setBotEnabled(false);
             controls.setStatus("Bot is thinking...", Color.RED);
+            controls.setDiagnostics("");
 
             // run the bot on the background thread so gui doesnt freeze
             Thread botThread = new Thread(() -> {
                 double[] velocity = bot.computeShot(currentPosition, course);
+                int iterations = bot.getLastIterationCount();
+                String botName = bot.getClass().getSimpleName();
+                double[] rawVelocity = velocity.clone();
 
+                double vxLower = Double.NaN, vxUpper = Double.NaN;
+                double vyLower = Double.NaN, vyUpper = Double.NaN;
+                double rxLower = Double.NaN, rxUpper = Double.NaN;
+                double ryLower = Double.NaN, ryUpper = Double.NaN;
+                boolean usedRealBasin = false;
+                int basinIters = 0;
+
+                if (robust) {
+                    double pipelineDt = Math.max(dt, 0.05); // coarser dt only for the fast grid scan
+                    GolfSimulator scanSim = new GolfSimulator(course, solver, pipelineDt, maxTime);
+                    GolfSimulator realSim = new GolfSimulator(course, solver, dt, maxTime);
+                    try {
+                        // Step 1 & 2: fast grid scan with coarse dt to find candidates
+                        List<SensitivityRanker.Candidate> candidates =
+                                SensitivityRanker.rankCandidates(scanSim, currentPosition, velocity[0], velocity[1], course.getTargetPosition());
+                        if (!candidates.isEmpty()) {
+                            SensitivityRanker.Candidate best = candidates.get(0);
+                            velocity = new double[]{best.vx, best.vy};
+                        }
+                        // Step 3: verify candidate and find basin using real dt so obstacles are detected properly
+                        ShotResult test = realSim.simulate(currentPosition, velocity);
+                        if (test.getOutcome() == ShotResult.Outcome.IN_TARGET) {
+                            BasinCenterer.Result basin = BasinCenterer.center(realSim, currentPosition, velocity[0], velocity[1], robustNoiseMode);
+                            ShotResult verify = realSim.simulate(currentPosition, basin.velocity);
+                            if (verify.getOutcome() == ShotResult.Outcome.IN_TARGET) {
+                                velocity = basin.velocity;
+                            }
+                            vxLower = basin.vxLower; vxUpper = basin.vxUpper;
+                            vyLower = basin.vyLower; vyUpper = basin.vyUpper;
+                            rxLower = basin.rxLower; rxUpper = basin.rxUpper;
+                            ryLower = basin.ryLower; ryUpper = basin.ryUpper;
+                            usedRealBasin = basin.usedRealBasin;
+                            basinIters = basin.simulationCount;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                // columns: bot, bot_iters, basin_iters, raw_vx, raw_vy, center_vx, center_vy, vx_lower, vx_upper, vy_lower, vy_upper
+                System.out.printf("BOT|%s|%d|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f%n",
+                        botName, iterations, basinIters,
+                        rawVelocity[0], rawVelocity[1],
+                        velocity[0], velocity[1],
+                        vxLower, vxUpper, vyLower, vyUpper);
+
+                // build sidebar diagnostics string
+                StringBuilder diag = new StringBuilder();
+                diag.append(String.format("Iters: %d", iterations));
+                diag.append(String.format("%nRaw:   vx=%.3f vy=%.3f", rawVelocity[0], rawVelocity[1]));
+                diag.append(String.format("%nFired: vx=%.3f vy=%.3f", velocity[0], velocity[1]));
+                if (!Double.isNaN(vxLower)) {
+                    diag.append(String.format("%nVel Basin(%d sims):", basinIters));
+                    diag.append(String.format("%n  vx [%.3f, %.3f]", vxLower, vxUpper));
+                    diag.append(String.format("%n  vy [%.3f, %.3f]", vyLower, vyUpper));
+                }
+                if (!Double.isNaN(rxLower)) {
+                    diag.append(String.format("%nReal Basin:"));
+                    diag.append(String.format("%n  vx [%.3f, %.3f]", rxLower, rxUpper));
+                    diag.append(String.format("%n  vy [%.3f, %.3f]", ryLower, ryUpper));
+                }
+                final String diagText = diag.toString();
+                final double[] finalVelocity = velocity;
                 // bring result back to javafx and update gui
                 javafx.application.Platform.runLater(() -> {
                     controls.setBotEnabled(true);
                     controls.clearStatus();
-                    handleShot(velocity);
+                    pendingBotDiag = diagText;
+                    handleShot(finalVelocity);
                 });
             });
             botThread.setDaemon(true); // thread stops when the app closes
@@ -198,17 +277,38 @@ public class SimulationController {
 
     private void handleShot(double[] velocity) {
         positionBeforeShot = currentPosition.clone();
-        controls.clearStatus(); // clears both status and position label
+        controls.clearStatus();
+        controls.setDiagnostics(pendingBotDiag);
+        pendingBotDiag = "";
+
+        NoiseMode noiseMode = controls.getNoiseMode();
+        double[] firedFrom     = ShotNoise.applyToPosition(currentPosition, noiseMode, rng);
+        double[] firedVelocity = ShotNoise.applyToVelocity(velocity, noiseMode, rng);
+
+        double dvx = firedVelocity[0] - velocity[0];
+        double dvy = firedVelocity[1] - velocity[1];
+
+        System.out.printf("SHOT|%.4f|%.4f|%.4f|%.4f%n",
+                firedFrom[0] - currentPosition[0], firedFrom[1] - currentPosition[1],
+                dvx, dvy);
+
+        // append noise to whatever the bot diagnostics already set
+        if (noiseMode != NoiseMode.NONE) {
+            String base = controls.getDiagnostics();
+            String noiseStr = String.format("Noise dvx=%.3f dvy=%.3f", dvx, dvy);
+            controls.setDiagnostics(base.isEmpty() ? noiseStr : base + "\n" + noiseStr);
+        }
 
         GolfSimulator sim = new GolfSimulator(course, controls.getSelectedSolver(), dt, maxTime);
-        ShotResult result = sim.simulate(currentPosition, velocity);
+        ShotResult result = sim.simulate(firedFrom, firedVelocity);
         shotCount++;
 
         controls.updateShotCount(shotCount);
         controls.setPosition(result.getFinalX(), result.getFinalY());
 
         // animate first, handle outcome after
-        renderer.animateBall(result.getPath(), () -> {
+        boolean scored = result.getOutcome() == ShotResult.Outcome.IN_TARGET;
+        renderer.animateBall(result.getPath(), dt, scored, () -> {
             handleOutcome(result);
         });
     }
@@ -237,6 +337,20 @@ public class SimulationController {
                     Color.CORNFLOWERBLUE,
                     () -> {
                         // after the message disappears, the ball resets to the location before the shot
+                        currentPosition = positionBeforeShot.clone();
+                        renderer.clearPaths();
+                        renderer.drawBall(currentPosition[0], currentPosition[1]);
+                        controls.clearStatus();
+                    }
+                );
+            }
+            case HIT_TREE -> {
+                controls.setStatus("Hit a tree!", Color.DARKGREEN);
+                renderer.drawInfoMessage(
+                    "Penalty",
+                    "Ball hit a tree :(\nReplaying from previous position.",
+                    Color.WHITE,
+                    () -> {
                         currentPosition = positionBeforeShot.clone();
                         renderer.clearPaths();
                         renderer.drawBall(currentPosition[0], currentPosition[1]);

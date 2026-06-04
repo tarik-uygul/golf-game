@@ -6,24 +6,24 @@ import model.obstacles.Obstacle;
 import model.obstacles.Water;
 
 public class PathPlanner {
-    // This is a helper class for MazeBot to compute the path to the hole using A* algorithm. 
+    // This is a helper class for MazeBot to compute the path to the hole using A* algorithm.
     // It will take a bird's-eye view of the maze as input and return the optimal path.
 
     // 1. FIXED: Added 'implements Comparable<Node>'
     private static class Node implements Comparable<Node> {
         int gridX, gridY; // FIXED: Renamed to match the rest of your code
         double gCost, hCost, fCost;
-        double worldX, worldY; 
+        double worldX, worldY;
         Node parent;
-        
+
         public Node(int gridX, int gridY, double worldX, double worldY) {
             this.gridX = gridX;
             this.gridY = gridY;
             this.worldX = worldX;
             this.worldY = worldY;
         }
-        
-        @Override 
+
+        @Override
         public int compareTo(Node other) {
             return Double.compare(this.fCost, other.fCost);
         }
@@ -39,7 +39,7 @@ public class PathPlanner {
 
         PriorityQueue<Node> openSet = new PriorityQueue<>();
         boolean[][] closedSet = new boolean[width + 1][height + 1];
-        
+
         // FIXED: Added a tracker for the best gCost to each cell to fix the A* logic
         double[][] bestCosts = new double[width + 1][height + 1];
         for (double[] row : bestCosts) {
@@ -61,7 +61,7 @@ public class PathPlanner {
 
             // If we are close enough to the target, stop searching
             if (getDistance(current, targetNode) < 1.0) {
-                break; 
+                break;
             }
 
             // Skip if we already evaluated a better path to this node
@@ -70,7 +70,7 @@ public class PathPlanner {
 
             // Check 8 neighbors (Up, Down, Left, Right, Diagonals)
             int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-            
+
             for (int[] dir : directions) {
                 int nx = current.gridX + dir[0];
                 int ny = current.gridY + dir[1];
@@ -80,33 +80,33 @@ public class PathPlanner {
                     double worldY = ny * gridSize;
 
                     if (isSafe(worldX, worldY, course)) {
-                        
+
                         Node tempNeighbor = new Node(nx, ny, worldX, worldY);
-                        double newCost = current.gCost + getDistance(current, tempNeighbor); 
+                        double newCost = current.gCost + getDistance(current, tempNeighbor);
 
                         if (newCost < bestCosts[nx][ny]) {
                             bestCosts[nx][ny] = newCost;
-                            
+
                             Node neighbor = new Node(nx, ny, worldX, worldY);
                             neighbor.parent = current;
                             neighbor.gCost = newCost;
                             neighbor.hCost = getDistance(neighbor, targetNode);
                             neighbor.fCost = neighbor.gCost + neighbor.hCost;
-                            
+
                             openSet.add(neighbor);
                         }
                     }
                 }
             }
         }
-        
+
         return extractCheckPoints(current);
     }
 
     private static boolean isSafe(double x, double y, CourseInputModuleStorage course) {
         // Increased buffer from 0.1m to 0.3m so gravity doesn't accidentally pull the ball in
-        final double SAFETY_BUFFER = 0.3; 
-        
+        final double SAFETY_BUFFER = 0.3;
+
         // 1. Check native terrain water (from the math function)
         if (course.getHeight(x, y) < 0) return false;
 
@@ -115,7 +115,7 @@ public class PathPlanner {
             for (Obstacle obstacle : course.getObstacles()) {
                 if (obstacle instanceof Water) {
                     if (obstacle.contains(x, y)) return false;
-                    
+
                     // Also check buffer for water so we don't aim too close to the edge
                     double dx = x - obstacle.getX();
                     double dy = y - obstacle.getY();
@@ -137,21 +137,21 @@ public class PathPlanner {
     private static List<double[]> extractCheckPoints(Node endNode) {
         List<double[]> path = new ArrayList<>();
         Node current = endNode;
-        
+
         while (current != null) {
             path.add(0, new double[] { current.worldX, current.worldY });
             current = current.parent;
         }
-        
+
         List<double[]> sparseCheckPoints = new ArrayList<>();
         for (int i = 0; i < path.size(); i += 2) { // Tighter checkpoints prevent corner-cutting
             sparseCheckPoints.add(path.get(i));
         }
-        
+
         if (endNode != null) {
             sparseCheckPoints.add(new double[] { endNode.worldX, endNode.worldY }); // ensure the last point is the target
         }
-        
+
         return sparseCheckPoints;
     }
 }

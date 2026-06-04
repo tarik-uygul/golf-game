@@ -56,7 +56,7 @@ public class MazeBot implements GolfBot {
                 course.heightFunction,
                 course.muK, course.muS,
                 currentPosition[0], currentPosition[1],
-                currentTarget[0], currentTarget[1], 
+                currentTarget[0], currentTarget[1],
                 0.0, // <-- 0.0 prevents simulator "swallowing" the ball mid-air
                 course.stepSize);
 
@@ -74,15 +74,15 @@ public class MazeBot implements GolfBot {
     private boolean isLineOfSightClear(double[] start, double[] end, CourseInputModuleStorage course) {
         double dist = Math.hypot(end[0] - start[0], end[1] - start[1]);
         int steps = (int) Math.ceil(dist / 0.2); // Check every 20cm along the line
-        
+
         for (int i = 1; i <= steps; i++) {
             double t = (double) i / steps;
             double x = start[0] + t * (end[0] - start[0]);
             double y = start[1] + t * (end[1] - start[1]);
-            
+
             // Check if this spot is in water (negative height)
             if (course.getHeight(x, y) < 0) return false;
-            
+
             // Check if this spot hits a placed obstacle
             if (course.getObstacles() != null) {
                 for (model.obstacles.Obstacle o : course.getObstacles()) {

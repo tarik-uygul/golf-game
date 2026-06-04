@@ -5,15 +5,14 @@ import model.GolfSimulator;
 import model.ShotResult;
 
 public class Hill_Climbing_Bot implements GolfBot {
-    /*
-     * Hill Climbing algorithm.
-     * For more information you can read about it here:
-     * https://en.wikipedia.org/wiki/Hill_climbing_algorithm
-     */
+
+    private static final double BOT_DT = 0.01;
+    private static final double BOT_MAX_TIME = 20.0;
 
     private final double dt;
     private final double maxTime;
     private final String solverType;
+    private int lastIterationCount = 0;
 
     public Hill_Climbing_Bot(double dt, double maxTime, String solverType) {
         this.dt = dt;
@@ -22,34 +21,33 @@ public class Hill_Climbing_Bot implements GolfBot {
     }
 
     @Override
+    public int getLastIterationCount() { return lastIterationCount; }
+
+    @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
-        GolfSimulator simulator = new GolfSimulator(course, solverType, dt, maxTime);
+        lastIterationCount = 0;
+        GolfSimulator simulator = new GolfSimulator(course, solverType, BOT_DT, BOT_MAX_TIME);
 
         double[] target = course.getTargetPosition();
         double dx = target[0] - currentPosition[0];
         double dy = target[1] - currentPosition[1];
         double baseAngle = Math.atan2(dy, dx);
-        // this is the angle from the ball to the target, this is where the search will
-        // begin
-        // atan2 is calculated with arctan formula, it is angle of the line connecting
-        // the ball and the target.
 
-        double currentSpeed = 5.0; // max speed from the manual, we will start with a power shot and adjust from
-                                   // there
-        double vx = currentSpeed * Math.cos(baseAngle); //
+        double currentSpeed = 5.0;
+        double vx = currentSpeed * Math.cos(baseAngle);
         double vy = currentSpeed * Math.sin(baseAngle);
 
         double bestScore = evaluateShot(simulator, currentPosition, course, vx, vy);
+        double bestVx = vx, bestVy = vy;
+        double localBestScore = bestScore;
         double stepSize = 0.5;
-        double minStepSize = 0.01;
-        int maxIterations = 1000;
-        int iterations = 0;
+        int maxRestarts = 50;
+        int restarts = 0;
 
-        while (stepSize > minStepSize && iterations < maxIterations) {
+        while (bestScore > course.getTargetRadius()) {
             boolean improved = false;
 
-            double[][] neighbors = { // we are checking the 4 neighbors, we'll take the shot with the best score ,
-                                     // repeat until we can't find a better shot
+            double[][] neighbors = {
                     { vx + stepSize, vy },
                     { vx - stepSize, vy },
                     { vx, vy + stepSize },
@@ -58,45 +56,63 @@ public class Hill_Climbing_Bot implements GolfBot {
 
             for (double[] neighbor : neighbors) {
                 double score = evaluateShot(simulator, currentPosition, course, neighbor[0], neighbor[1]);
-                if (score < bestScore) {
-                    bestScore = score;
+                if (score < localBestScore) {
+                    localBestScore = score;
                     vx = neighbor[0];
                     vy = neighbor[1];
                     improved = true;
                 }
+                if (localBestScore < bestScore) {
+                    bestScore = localBestScore;
+                    bestVx = vx;
+                    bestVy = vy;
+                }
                 if (bestScore <= course.getTargetRadius()) {
-                    return new double[] { vx, vy };
+                    return new double[] { bestVx, bestVy };
                 }
             }
 
-            if (!improved) { // if we cannot find a better shot, well reduce the step size by half and search
-                             // more in detail
+            if (!improved) {
                 stepSize *= 0.5;
+                if (stepSize < 0.01) {
+                    if (restarts++ >= maxRestarts) break;
+                    double newAngle = Math.random() * 2 * Math.PI;
+                    double newSpeed = 0.5 + Math.random() * 4.5;
+                    vx = newSpeed * Math.cos(newAngle);
+                    vy = newSpeed * Math.sin(newAngle);
+                    localBestScore = evaluateShot(simulator, currentPosition, course, vx, vy);
+                    if (localBestScore < bestScore) {
+                        bestScore = localBestScore;
+                        bestVx = vx;
+                        bestVy = vy;
+                    }
+                    stepSize = 0.5;
+                }
             }
-            iterations++;
         }
 
-        return new double[] { vx, vy };
+        return new double[] { bestVx, bestVy };
     }
 
-    private double evaluateShot(GolfSimulator simulator, double[] currentPosition, CourseInputModuleStorage course,
-            double vx,
-            double vy) { // we get the scores for shots from this func, the lower the score the better.
+    private double evaluateShot(GolfSimulator simulator, double[] currentPosition,
+                                 CourseInputModuleStorage course, double vx, double vy) {
+        lastIterationCount++;
         try {
             ShotResult result = simulator.simulate(currentPosition, new double[] { vx, vy });
-
-            if (result.getOutcome() == ShotResult.Outcome.IN_WATER) {
-                return 1000.0;
-            }
-            if (result.getOutcome() == ShotResult.Outcome.TIMEOUT) {
-                return 500.0;
-            }
-
             double[] finalPos = result.getFinalState();
             double[] target = course.getTargetPosition();
             double dx = finalPos[0] - target[0];
             double dy = finalPos[1] - target[1];
-            return Math.sqrt(dx * dx + dy * dy);
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (result.getOutcome() == ShotResult.Outcome.IN_WATER
+                    || result.getOutcome() == ShotResult.Outcome.HIT_TREE
+                    || result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS) {
+                return 1000.0 + distance;
+            }
+            if (result.getOutcome() == ShotResult.Outcome.TIMEOUT) {
+                return 500.0 + distance;
+            }
+            return distance;
         } catch (Exception e) {
             return 1000.0;
         }

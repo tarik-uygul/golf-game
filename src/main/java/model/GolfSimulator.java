@@ -8,9 +8,8 @@ import physics.EulerSolver;
 import physics.GolfPhysicsFunction;
 import physics.ODEFunction;
 import physics.RungeKutta4;
-import model.obstacles.Obstacle;
-import model.obstacles.Tree;
-import model.obstacles.Water;
+import physics.CourseCollisionDetector;
+import physics.ObstacleCollisionDetector;
 
 public class GolfSimulator {
 
@@ -19,17 +18,19 @@ public class GolfSimulator {
     private final String solverType;
     private final ODEFunction physicsFunc;
     private final CourseInputModuleStorage course;
+    private final CourseCollisionDetector courseDetector;
+    private final ObstacleCollisionDetector obstacleDetector;
     private final double dt;
     private final double maxTime;
-    private final CollisionDetector collisionDetector;
 
     public GolfSimulator(CourseInputModuleStorage course, String solverType, double dt, double maxTime) {
         this.course = course;
         this.solverType = solverType;
-        this.physicsFunc = new GolfPhysicsFunction(course);
         this.dt = dt;
         this.maxTime = maxTime;
-        this.collisionDetector = new CollisionDetector(course);
+        this.courseDetector = new CourseCollisionDetector(course);
+        this.obstacleDetector = new ObstacleCollisionDetector(course);
+        this.physicsFunc = new GolfPhysicsFunction(course, this.courseDetector);
     }
 
     // initialVelocity = [vx, vy], starting from currentPosition = [x, y]
@@ -49,23 +50,16 @@ public class GolfSimulator {
             path.add(state.clone());
             time += dt;
 
-            if (collisionDetector.isOutOfBounds(state[0], state[1])) {
-                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
+            // Check for collisions with course boundaries (terrain water, out-of-bounds)
+            ShotResult.Outcome courseCollision = courseDetector.checkCourse(state[0], state[1]);
+            if (courseCollision != null) {
+                return new ShotResult(path, courseCollision, state);
             }
 
-            Obstacle obstacle = collisionDetector.getCollidingObstacle(state[0], state[1]);
-
-            if (obstacle instanceof Water) {
-                return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
-            }
-
-            if (obstacle instanceof Tree) {
-                return new ShotResult(path, ShotResult.Outcome.OUT_OF_BOUNDS, state);
-            }
-
-            // check water (negative height)
-            if (course.getHeight(state[0], state[1]) < 0) {
-                return new ShotResult(path, ShotResult.Outcome.IN_WATER, state);
+            // Check for collisions with placed obstacles (trees, water hazards, sand)
+            ShotResult.Outcome obstacleCollision = obstacleDetector.checkTerminal(state[0], state[1]);
+            if (obstacleCollision != null) {
+                return new ShotResult(path, obstacleCollision, state);
             }
 
             // check target reached

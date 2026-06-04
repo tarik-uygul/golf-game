@@ -5,7 +5,7 @@ import model.ShotResult;
 
 // checks course-level boundaries only: terrain water (height < 0) and out-of-bounds
 // for obstacle objects (trees, water hazards, sand) see ObstacleCollisionDetector
-public class CourseCollisionDetector {
+public class CourseCollisionDetector implements CollisionDetector {
 
     private final CourseInputModuleStorage course;
 
@@ -21,5 +21,15 @@ public class CourseCollisionDetector {
             return ShotResult.Outcome.OUT_OF_BOUNDS;
         }
         return null;
+    }
+
+    @Override
+    public ShotResult.Outcome checkTerminal(double x, double y) {
+        return checkCourse(x, y);
+    }
+
+    @Override
+    public double[] getSurfaceFriction(double x, double y) {
+        return new double[] { course.getMuK(), course.getMuS() };
     }
 }

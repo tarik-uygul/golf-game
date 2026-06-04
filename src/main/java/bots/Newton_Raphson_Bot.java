@@ -33,52 +33,26 @@ public class Newton_Raphson_Bot implements GolfBot {
         // Define tolerance
         double tolerance = Math.max(course.getTargetRadius(), 0.15);
 
-        // --- DYNAMIC GRID SEARCH ---
-        // Prevents the game from freezing by only doing dense scans on short putts!
-        
-        if (distanceToTarget <= 1.5) {
-            // MICRO-PUTT: Dense Grid (250 simulations, but they stop fast)
-            for (double testPower = 0.1; testPower <= 5.0; testPower += 0.1) {
-                for (double angleOffset = -0.3; angleOffset <= 0.3; angleOffset += 0.15) {
-                    double testVx = testPower * Math.cos(angle + angleOffset);
-                    double testVy = testPower * Math.sin(angle + angleOffset);
+        // First, do a coarse grid search to find a good starting point for Newton-Raphson.
+        // Test around 10 powers straight at the target. No nested loops needed!
+        for (double testPower = 0.5; testPower <= 5.0; testPower += 0.5) {
+            double testVx = testPower * Math.cos(angle);
+            double testVy = testPower * Math.sin(angle);
 
-                    double[] testLanding = simulateForPosition(simulator, currentPosition, testVx, testVy);
-                    double dist = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
+            double[] testLanding = simulateForPosition(simulator, currentPosition, testVx, testVy);
+            double dist = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
 
-                    if (dist < bestInitialDistance) {
-                        bestInitialDistance = dist;
-                        bestInitialVx = testVx;
-                        bestInitialVy = testVy;
-                    }
-
-                    if (dist <= tolerance) {
-                        return new double[] { testVx, testVy };
-                    }
-                }
+            if (dist < bestInitialDistance) {
+                bestInitialDistance = dist;
+                bestInitialVx = testVx;
+                bestInitialVy = testVy;
             }
-        } else {
-            // LONG SHOT: Sparse Grid (Only 5 simulations, lightning fast!)
-            for (double testPower = 1.0; testPower <= 5.0; testPower += 1.0) {
-                double testVx = testPower * Math.cos(angle);
-                double testVy = testPower * Math.sin(angle);
-
-                double[] testLanding = simulateForPosition(simulator, currentPosition, testVx, testVy);
-                double dist = Math.sqrt(Math.pow(testLanding[0] - target[0], 2) + Math.pow(testLanding[1] - target[1], 2));
-
-                if (dist < bestInitialDistance) {
-                    bestInitialDistance = dist;
-                    bestInitialVx = testVx;
-                    bestInitialVy = testVy;
-                }
-                
-                if (dist <= tolerance) {
-                    return new double[] { testVx, testVy };
-                }
+            
+            if (dist <= tolerance) {
+                return new double[] { testVx, testVy };
             }
         }
-
-        // --- FALLBACK: NEWTON RAPHSON ---
+        // 
         double vx = bestInitialVx;
         double vy = bestInitialVy;
         double epsilon = 0.01; 

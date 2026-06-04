@@ -28,36 +28,50 @@ public class MazeBot implements GolfBot {
             System.out.println("Planned path: " + plannedPath.size() + " steps");
         }
 
-        // 2. FIX FOR FREEZING: Prevent IndexOutOfBounds exception!
-        if (currentPathIndex >= plannedPath.size()) {
-            currentPathIndex = plannedPath.size() - 1;
-        }
-
-        // 3. FIX FOR SLOW SHOTS: Line of Sight targeting.
-        // Look at the furthest waypoint first. If the path is clear, skip all the waypoints in between!
-        for (int i = plannedPath.size() - 1; i > currentPathIndex; i--) {
+       // 2. Find the FURTHEST visible waypoint on the remaining path
+        int furthestVisibleIndex = currentPathIndex;
+        for (int i = plannedPath.size() - 1; i >= currentPathIndex; i--) {
             if (isLineOfSightClear(currentPosition, plannedPath.get(i), course)) {
-                currentPathIndex = i;
+                furthestVisibleIndex = i;
                 break;
             }
         }
-
+        
+        // Update our official progress
+        currentPathIndex = furthestVisibleIndex;
         double[] currentTarget = plannedPath.get(currentPathIndex);
-        double distanceToTarget = Math.hypot(currentTarget[0] - currentPosition[0], currentTarget[1] - currentPosition[1]);
 
-        // 4. Advance if we are extremely close and it is NOT the final hole
-        if (distanceToTarget < 0.5 && currentPathIndex < plannedPath.size() - 1) {
-            currentPathIndex++;
-            currentTarget = plannedPath.get(currentPathIndex);
+        // 3. The "Peek Around the Corner" Fix
+        // If we are extremely close to our target waypoint but STILL can't see the next one,
+        // we are trapped on the corner. We project our target 1.5m towards the next waypoint
+        // to force the bot to hit a firm shot around the bend.
+        if (currentPathIndex < plannedPath.size() - 1) {
+            double distanceToTarget = Math.hypot(currentTarget[0] - currentPosition[0], currentTarget[1] - currentPosition[1]);
+            
+            if (distanceToTarget < 0.5) {
+                double[] nextWaypoint = plannedPath.get(currentPathIndex + 1);
+                double dx = nextWaypoint[0] - currentPosition[0];
+                double dy = nextWaypoint[1] - currentPosition[1];
+                double angleToNext = Math.atan2(dy, dx);
+                
+                // Nudge the temporary target 1.5 meters around the corner
+                currentTarget = new double[] {
+                    currentPosition[0] + 1.5 * Math.cos(angleToNext),
+                    currentPosition[1] + 1.5 * Math.sin(angleToNext)
+                };
+            }
         }
 
-        // We create a fake course where the target is the current target.
+        // 4. Create the Fake Course
+        // Use the actual strict target radius for the final hole, but be loose (0.4m) on intermediate waypoints
+        double fakeTolerance = (currentPathIndex == plannedPath.size() - 1) ? course.getTargetRadius() : 0.4;
+
         CourseInputModuleStorage fakeCourse = new CourseInputModuleStorage(
                 course.heightFunction,
                 course.muK, course.muS,
                 currentPosition[0], currentPosition[1],
                 currentTarget[0], currentTarget[1],
-                0.0, // <-- 0.0 prevents simulator "swallowing" the ball mid-air
+                fakeTolerance, 
                 course.stepSize);
 
         if (course.getObstacles() != null) {

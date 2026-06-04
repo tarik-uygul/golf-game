@@ -152,10 +152,19 @@ public class Newton_Raphson_Bot implements GolfBot {
         return new double[] { globalBestVx, globalBestVy };
     }
 
-    private double[] simulateForPosition(GolfSimulator simulator, double[] startPosition,
-                                          double vx, double vy) {
+    private double[] simulateForPosition(GolfSimulator simulator, double[] startPosition, double vx, double vy) {
         try {
-            ShotResult result = simulator.simulate(startPosition, new double[] { vx, vy });
+            // FIXED: Use the memory-free fast-forward simulation!
+            ShotResult result = simulator.simulateBotShot(startPosition, new double[] { vx, vy });
+            
+            // FIXED: If the shot hits a tree, water, or goes out of bounds, return a massive error
+            // This tricks the Newton-Raphson math into aggressively steering away from hazards!
+            if (result.getOutcome() == ShotResult.Outcome.IN_WATER ||
+                result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS ||
+                result.getOutcome() == ShotResult.Outcome.HIT_TREE) {
+                return new double[] { 9999.0, 9999.0 }; 
+            }
+            
             return result.getFinalState();
         } catch (Exception e) {
             return new double[] { 9999.0, 9999.0 };

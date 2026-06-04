@@ -104,33 +104,38 @@ public class PathPlanner {
     }
 
     private static boolean isSafe(double x, double y, CourseInputModuleStorage course) {
-        // A 35cm buffer ensures the ball's physical radius never touches a hazard or a wall,
-        // and protects against physics "drift" when rolling down slopes.
+        // A 35cm buffer ensures the ball's physical radius never touches a hazard
         final double SAFETY_BUFFER = 0.35; 
 
-        // 1. OUT OF BOUNDS PROTECTION (The "Wall Buffer")
-        // We use the course dimensions but shrink the "safe zone" by 35cm on all sides.
-        // This prevents the bot from pathing exactly on the map's edge.
+        // 1. OUT OF BOUNDS PROTECTION
         if (x < SAFETY_BUFFER || x > course.getCourseWidth() - SAFETY_BUFFER || 
             y < SAFETY_BUFFER || y > course.getCourseHeight() - SAFETY_BUFFER) {
             return false; 
         }
 
-        // 2. NATIVE TERRAIN WATER (Mathematical Height Function)
+        // 2. NATIVE TERRAIN WATER
         if (course.getHeight(x, y) < 0) {
             return false;
         }
 
-        // 3. ALL USER-PLACED OBSTACLES (Trees, Water, Sand)
+        // 3. GRAVITY & SLOPE CHECK (The Missing Piece!)
+        // Calculate the steepness of the terrain at this exact grid coordinate
+        double slopeX = course.getSlopeX(x, y);
+        double slopeY = course.getSlopeY(x, y);
+        double slopeGradient = Math.hypot(slopeX, slopeY);
+        
+        // If the slope pull is stronger than static friction, the ball will roll away. 
+        // We CANNOT use this grid cell as a safe stopping point!
+        if (slopeGradient > course.getStaticFriction()) {
+            return false;
+        }
+
+        // 4. ALL USER-PLACED OBSTACLES (Trees, Water, Sand)
         if (course.getObstacles() != null) {
             for (model.obstacles.Obstacle obstacle : course.getObstacles()) {
-                
-                // First, check if the exact point is inside the obstacle (matches physics engine)
                 if (obstacle.contains(x, y)) {
                     return false;
                 }
-
-                // Second, apply the Safety Buffer to ALL obstacles universally
                 double dx = x - obstacle.getX();
                 double dy = y - obstacle.getY();
                 if (Math.hypot(dx, dy) < obstacle.getRadius() + SAFETY_BUFFER) {
@@ -139,7 +144,6 @@ public class PathPlanner {
             }
         }
         
-        // If it survived all checks, this coordinate is 100% safe to traverse!
         return true;
     }
 

@@ -78,6 +78,43 @@ public class GolfSimulator {
 
         return new ShotResult(path, ShotResult.Outcome.TIMEOUT, state);
     }
+    // Fast simulation for bots - does not record the visual path to save memory/CPU
+    public ShotResult simulateBotShot(double[] currentPosition, double[] initialVelocity) {
+        double[] state = {
+                currentPosition[0], currentPosition[1],
+                initialVelocity[0], initialVelocity[1]
+        };
+
+        double time = 0;
+
+        while (time < maxTime) {
+            state = doStep(state);
+            time += dt;
+
+            // Check boundaries
+            ShotResult.Outcome courseCollision = courseDetector.checkCourse(state[0], state[1]);
+            if (courseCollision != null) return new ShotResult(null, courseCollision, state);
+
+            // Check obstacles
+            ShotResult.Outcome obstacleCollision = obstacleDetector.checkTerminal(state[0], state[1]);
+            if (obstacleCollision != null) return new ShotResult(null, obstacleCollision, state);
+
+            // Check target
+            double[] target = course.getTargetPosition();
+            double dx = state[0] - target[0];
+            double dy = state[1] - target[1];
+            if (Math.sqrt(dx * dx + dy * dy) <= course.getTargetRadius()) {
+                return new ShotResult(null, ShotResult.Outcome.IN_TARGET, state);
+            }
+
+            // Check if ball stopped
+            if (hasStopped(state)) {
+                return new ShotResult(null, ShotResult.Outcome.STOPPED, state);
+            }
+        }
+        return new ShotResult(null, ShotResult.Outcome.TIMEOUT, state);
+    }
+
 
     private double[] doStep(double[] state) {
         if (solverType.equals("rk4")) {

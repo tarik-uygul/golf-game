@@ -56,15 +56,18 @@ public class Newton_Raphson_Bot implements GolfBot {
         lastIterationCount = 0;
         double vx = bestVx;
         double vy = bestVy;
+        // ... (inside computeShot)
         double epsilon = 0.01;
-        int maxIterations = 50;
-        int maxRestarts = 20;
+        int maxIterations = 15; // REDUCED from 50
+        int maxRestarts = 3;    // REDUCED from 20
         double damping = 0.8;
         double globalBestDist = Double.MAX_VALUE;
         double globalBestVx = vx, globalBestVy = vy;
 
-        for (int restart = 0; restart <= maxRestarts; restart++) {
+        // If MazeBot gives us a 0.0 radius, accept any shot that stops within 20cm of the waypoint
+        double acceptanceRadius = course.getTargetRadius() > 0 ? course.getTargetRadius() : 0.2;
 
+        for (int restart = 0; restart <= maxRestarts; restart++) {
             for (int i = 0; i < maxIterations; i++) {
                 lastIterationCount++;
 
@@ -79,9 +82,11 @@ public class Newton_Raphson_Bot implements GolfBot {
                     globalBestVy = vy;
                 }
 
-                if (distanceToHole <= course.getTargetRadius()) {
+                // FIXED: Use acceptanceRadius so it actually breaks!
+                if (distanceToHole <= acceptanceRadius) {
                     return new double[] { vx, vy };
                 }
+               
 
                 double[] tweakVxLanding = simulateForPosition(simulator, currentPosition, vx + epsilon, vy);
                 double dX_dVx = (tweakVxLanding[0] - currentLanding[0]) / epsilon;
@@ -138,7 +143,7 @@ public class Newton_Raphson_Bot implements GolfBot {
                 }
             }
 
-            if (globalBestDist <= course.getTargetRadius()) break;
+if (globalBestDist <= acceptanceRadius) break;
 
             if (restart < maxRestarts) {
                 double randAngle = Math.random() * 2 * Math.PI;

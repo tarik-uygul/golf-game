@@ -66,8 +66,8 @@ public class MazeBot implements GolfBot {
             }
         }
 
-        Newton_Raphson_Bot newtonBot = new Newton_Raphson_Bot(dt, maxTime, solverType);
-        return newtonBot.computeShot(currentPosition, fakeCourse);
+        Hill_Climbing_Bot hillbot = new Hill_Climbing_Bot(dt, maxTime, solverType);
+        return hillbot.computeShot(currentPosition, fakeCourse);
     }
 
     // Casts a "ray" from the ball to the target to see if we can shoot straight there

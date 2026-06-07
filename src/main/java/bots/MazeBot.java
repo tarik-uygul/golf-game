@@ -20,7 +20,21 @@ public class MazeBot implements GolfBot {
 
     @Override
     public double[] computeShot(double[] currentPosition, CourseInputModuleStorage course) {
-        // 1. Plan path if we don't have one
+        
+       
+      
+        // If there are no obstacles between the ball and the actual hole,
+        // throw away the maze logic and take the winning shot immediately!
+        double[] finalTarget = course.getTargetPosition();
+        if (isLineOfSightClear(currentPosition, finalTarget, course)) {
+            System.out.println("Direct line of sight to hole! Taking the winning shot.");
+            // We use Hill Climbing here because it handles final approach physics beautifully.
+            // Notice we pass the REAL 'course' object so it uses the real target radius!
+            Hill_Climbing_Bot finisherBot = new Hill_Climbing_Bot(dt, maxTime, solverType);
+            return finisherBot.computeShot(currentPosition, course); 
+        }
+
+        // 2. Plan path if we don't have one
         if (plannedPath == null) {
             System.out.println("Planning new path...");
             plannedPath = planPath(currentPosition, course.getTargetPosition(), course);
@@ -28,13 +42,12 @@ public class MazeBot implements GolfBot {
             System.out.println("Planned path: " + plannedPath.size() + " steps");
         }
 
-        // 2. FIX FOR FREEZING: Prevent IndexOutOfBounds exception!
+        // Prevent IndexOutOfBounds exception
         if (currentPathIndex >= plannedPath.size()) {
             currentPathIndex = plannedPath.size() - 1;
         }
 
-        // 3. FIX FOR SLOW SHOTS: Line of Sight targeting.
-        // Look at the furthest waypoint first. If the path is clear, skip all the waypoints in between!
+        // 3. Line of Sight targeting for waypoints
         for (int i = plannedPath.size() - 1; i > currentPathIndex; i--) {
             if (isLineOfSightClear(currentPosition, plannedPath.get(i), course)) {
                 currentPathIndex = i;
@@ -51,13 +64,16 @@ public class MazeBot implements GolfBot {
             currentTarget = plannedPath.get(currentPathIndex);
         }
 
-        // We create a fake course where the target is the current target.
+        // If our current waypoint is the final hole, use the real radius instead of 0.0
+        boolean isFinalWaypoint = (currentPathIndex == plannedPath.size() - 1);
+        double radiusToUse = isFinalWaypoint ? course.getTargetRadius() : 0.0;
+
         CourseInputModuleStorage fakeCourse = new CourseInputModuleStorage(
                 course.heightFunction,
                 course.muK, course.muS,
                 currentPosition[0], currentPosition[1],
                 currentTarget[0], currentTarget[1],
-                0.0, // <-- 0.0 prevents simulator "swallowing" the ball mid-air
+                radiusToUse, // 
                 course.stepSize);
 
         if (course.getObstacles() != null) {
@@ -66,8 +82,9 @@ public class MazeBot implements GolfBot {
             }
         }
 
-        Hill_Climbing_Bot hillbot = new Hill_Climbing_Bot(dt, maxTime, solverType);
-        return hillbot.computeShot(currentPosition, fakeCourse);
+        // Use the sub-bot to hit the ball to the waypoint
+        Hill_Climbing_Bot waypointBot = new Hill_Climbing_Bot(dt, maxTime, solverType);
+        return waypointBot.computeShot(currentPosition, fakeCourse);
     }
 
     // Casts a "ray" from the ball to the target to see if we can shoot straight there
@@ -90,7 +107,7 @@ public class MazeBot implements GolfBot {
                 }
             }
         }
-        return true; // The path is totally clear!
+        return true; // The path is totally clear
     }
 
     private List<double[]> planPath(double[] start, double[] target, CourseInputModuleStorage course) {

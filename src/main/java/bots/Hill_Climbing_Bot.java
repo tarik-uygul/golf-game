@@ -37,10 +37,12 @@ public class Hill_Climbing_Bot implements GolfBot {
         double bestDistance = evaluateShot(simulator, currentPosition, course, vx, vy);
         double stepSize = 1.0; 
 
-        // 2. Climb the Hill (Refine the shot until we hit the hole or get stuck)
+        // Accept a shot if it lands within 20cm of the waypoint (since MazeBot target is 0.0)
+        double acceptanceRadius = course.getTargetRadius() > 0 ? course.getTargetRadius() : 0.2;
         int maxIterations = 200; // Strict limit prevents infinite freezing
 
-        while (bestDistance > course.getTargetRadius() && stepSize > 0.01 && lastIterationCount < maxIterations) {
+        // Use acceptanceRadius instead of course.getTargetRadius()
+        while (bestDistance > acceptanceRadius && stepSize > 0.01 && lastIterationCount < maxIterations) {
             boolean improved = false;
             double nextVx = vx;
             double nextVy = vy;

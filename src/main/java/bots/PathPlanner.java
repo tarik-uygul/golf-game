@@ -2,16 +2,11 @@ package bots;
 
 import java.util.*;
 import io.CourseInputModuleStorage;
-import model.obstacles.Obstacle;
-import model.obstacles.Water;
 
 public class PathPlanner {
-    // This is a helper class for MazeBot to compute the path to the hole using A* algorithm.
-    // It will take a bird's-eye view of the maze as input and return the optimal path.
 
-    // 1. FIXED: Added 'implements Comparable<Node>'
     private static class Node implements Comparable<Node> {
-        int gridX, gridY; // FIXED: Renamed to match the rest of your code
+        int gridX, gridY;
         double gCost, hCost, fCost;
         double worldX, worldY;
         Node parent;
@@ -40,7 +35,9 @@ public class PathPlanner {
         PriorityQueue<Node> openSet = new PriorityQueue<>();
         boolean[][] closedSet = new boolean[width + 1][height + 1];
 
-        // FIXED: Added a tracker for the best gCost to each cell to fix the A* logic
+        // Cache the heavy `isSafe` evaluations so we don't recalculate the same grid tile 8 times during neighbor checks
+        Boolean[][] safeCache = new Boolean[width + 1][height + 1];
+
         double[][] bestCosts = new double[width + 1][height + 1];
         for (double[] row : bestCosts) {
             Arrays.fill(row, Double.MAX_VALUE);
@@ -79,7 +76,12 @@ public class PathPlanner {
                     double worldX = nx * gridSize;
                     double worldY = ny * gridSize;
 
-                    if (isSafe(worldX, worldY, course)) {
+                    // Retrieve or compute the safety of this tile only ONCE
+                    if (safeCache[nx][ny] == null) {
+                        safeCache[nx][ny] = isSafe(worldX, worldY, course);
+                    }
+
+                    if (safeCache[nx][ny]) {
 
                         Node tempNeighbor = new Node(nx, ny, worldX, worldY);
                         double newCost = current.gCost + getDistance(current, tempNeighbor);
@@ -107,18 +109,18 @@ public class PathPlanner {
         // A 35cm buffer ensures the ball's physical radius never touches a hazard
         final double SAFETY_BUFFER = 0.35; 
 
-        // 1. OUT OF BOUNDS PROTECTION
+        // OUT OF BOUNDS PROTECTION
         if (x < SAFETY_BUFFER || x > course.getCourseWidth() - SAFETY_BUFFER || 
             y < SAFETY_BUFFER || y > course.getCourseHeight() - SAFETY_BUFFER) {
             return false; 
         }
 
-        // 2. NATIVE TERRAIN WATER
+        // WATER CHECK (Negative Heights)
         if (course.getHeight(x, y) < 0) {
             return false;
         }
 
-        // 3. GRAVITY & SLOPE CHECK (The Missing Piece!)
+        //GRAVITY & SLOPE CHECK
         // Calculate the steepness of the terrain at this exact grid coordinate
         double slopeX = course.getSlopeX(x, y);
         double slopeY = course.getSlopeY(x, y);

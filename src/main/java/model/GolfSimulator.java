@@ -135,6 +135,9 @@ public class GolfSimulator {
         double dhdx = course.getSlopeX(state[0], state[1]);
         double dhdy = course.getSlopeY(state[0], state[1]);
         double slopeNorm = Math.sqrt(dhdx * dhdx + dhdy * dhdy);
-        return slopeNorm <= course.getStaticFriction();
+        
+        // FIXED: Ask the obstacle detector for local friction!
+        double[] surfaceFriction = obstacleDetector.getSurfaceFriction(state[0], state[1]);
+        return slopeNorm <= surfaceFriction[1];
     }
 }

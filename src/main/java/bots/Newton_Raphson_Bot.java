@@ -7,7 +7,7 @@ import model.ShotResult;
 public class Newton_Raphson_Bot implements GolfBot {
 
     private static final double BOT_DT = 0.01;
-    private static final double BOT_MAX_TIME = 20.0;
+    private static final double BOT_MAX_TIME = 10.0; 
 
     private final double dt;
     private final double maxTime;
@@ -56,10 +56,9 @@ public class Newton_Raphson_Bot implements GolfBot {
         lastIterationCount = 0;
         double vx = bestVx;
         double vy = bestVy;
-        // ... (inside computeShot)
         double epsilon = 0.01;
-        int maxIterations = 15; // REDUCED from 50
-        int maxRestarts = 3;    // REDUCED from 20
+        int maxIterations = 10; 
+        int maxRestarts = 3;    
         double damping = 0.8;
         double globalBestDist = Double.MAX_VALUE;
         double globalBestVx = vx, globalBestVy = vy;
@@ -82,7 +81,7 @@ public class Newton_Raphson_Bot implements GolfBot {
                     globalBestVy = vy;
                 }
 
-                // FIXED: Use acceptanceRadius so it actually breaks!
+                //  Use acceptanceRadius so it actually breaks when it gets close enough to the hole, instead of trying to be too precise and freezing up
                 if (distanceToHole <= acceptanceRadius) {
                     return new double[] { vx, vy };
                 }
@@ -103,7 +102,7 @@ public class Newton_Raphson_Bot implements GolfBot {
                     vy += (Math.random() - 0.5) * 0.5;
                     continue;
                 }
-
+                // Invert the Jacobian matrix to get the parameter updates. This is the core of the Newton-Raphson method.
                 double invJ11 = dY_dVy / determinant;
                 double invJ12 = -dX_dVy / determinant;
                 double invJ21 = -dY_dVx / determinant;
@@ -159,11 +158,11 @@ if (globalBestDist <= acceptanceRadius) break;
 
     private double[] simulateForPosition(GolfSimulator simulator, double[] startPosition, double vx, double vy) {
         try {
-            // FIXED: Use the memory-free fast-forward simulation!
+            // Use the memory-free fast-forward simulation
             ShotResult result = simulator.simulateBotShot(startPosition, new double[] { vx, vy });
             
-            // FIXED: If the shot hits a tree, water, or goes out of bounds, return a massive error
-            // This tricks the Newton-Raphson math into aggressively steering away from hazards!
+            //If the shot hits a tree, water, or goes out of bounds, return a massive error
+            // This tricks the Newton-Raphson math into aggressively steering away from hazards
             if (result.getOutcome() == ShotResult.Outcome.IN_WATER ||
                 result.getOutcome() == ShotResult.Outcome.OUT_OF_BOUNDS ||
                 result.getOutcome() == ShotResult.Outcome.HIT_TREE) {
